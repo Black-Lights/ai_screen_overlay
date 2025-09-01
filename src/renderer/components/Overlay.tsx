@@ -36,6 +36,16 @@ const Overlay: React.FC<OverlayProps> = ({
   const [size, setSize] = useState(settings.overlaySize);
   const [showSettings, setShowSettings] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [apiStatus, setApiStatus] = useState<{
+    openai: 'ready' | 'invalid' | 'error' | 'not-configured';
+    claude: 'ready' | 'invalid' | 'error' | 'not-configured';
+    deepseek: 'ready' | 'invalid' | 'error' | 'not-configured';
+  }>({
+    openai: 'not-configured',
+    claude: 'not-configured',
+    deepseek: 'not-configured',
+  });
+  const [isCheckingApiStatus, setIsCheckingApiStatus] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const titleBarRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
@@ -50,6 +60,69 @@ const Overlay: React.FC<OverlayProps> = ({
       setSize({ width: rect.width || 500, height: rect.height || 700 });
     }
   }, [settings.overlayPosition, settings.overlaySize]);
+
+  // Check API status when settings change
+  useEffect(() => {
+    if (showSettings) {
+      checkApiStatus();
+    }
+  }, [settings.openaiApiKey, settings.claudeApiKey, settings.deepseekApiKey, showSettings]);
+
+  const checkApiStatus = async () => {
+    setIsCheckingApiStatus(true);
+    try {
+      const status = await window.electronAPI.getApiKeysStatus();
+      setApiStatus(status);
+    } catch (error) {
+      console.error('Failed to check API status:', error);
+    } finally {
+      setIsCheckingApiStatus(false);
+    }
+  };
+
+  const handleApiKeyChange = async (provider: string, value: string) => {
+    const keyField = `${provider}ApiKey` as keyof AppSettings;
+    onUpdateSettings({ [keyField]: value });
+    
+    // Save to .env file
+    try {
+      await window.electronAPI.saveApiKey(provider, value);
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+    }
+  };
+
+  const getStatusColor = (provider: string): string => {
+    const status = apiStatus[provider as keyof typeof apiStatus];
+    switch (status) {
+      case 'ready':
+        return 'text-green-400';
+      case 'invalid':
+        return 'text-red-400';
+      case 'error':
+        return 'text-yellow-400';
+      case 'not-configured':
+        return 'text-gray-400';
+      default:
+        return 'text-gray-400';
+    }
+  };
+
+  const getStatusText = (provider: string): string => {
+    const status = apiStatus[provider as keyof typeof apiStatus];
+    switch (status) {
+      case 'ready':
+        return 'Ready';
+      case 'invalid':
+        return 'Invalid';
+      case 'error':
+        return 'Error';
+      case 'not-configured':
+        return 'Not configured';
+      default:
+        return 'Unknown';
+    }
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (titleBarRef.current?.contains(e.target as Node)) {
@@ -144,7 +217,7 @@ const Overlay: React.FC<OverlayProps> = ({
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-            <span className="text-white font-medium text-sm">
+            <span className="text-white font-medium text-sm" style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>
               AI Screen Overlay
             </span>
           </div>
@@ -237,7 +310,7 @@ const Overlay: React.FC<OverlayProps> = ({
           <div className="absolute inset-0 glass-panel animate-fade-in z-40">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-white">Settings</h2>
+                <h2 className="text-xl font-bold text-white" style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>Settings</h2>
                 <button
                   onClick={() => setShowSettings(false)}
                   className="text-white/70 hover:text-white transition-colors"
@@ -250,41 +323,76 @@ const Overlay: React.FC<OverlayProps> = ({
 
               {/* API Keys Section */}
               <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-white" style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>API Keys</h3>
+                  <button
+                    onClick={checkApiStatus}
+                    disabled={isCheckingApiStatus}
+                    className="text-xs text-white/70 hover:text-white transition-colors px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {isCheckingApiStatus ? 'Checking...' : 'Test Keys'}
+                  </button>
+                </div>
+
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    OpenAI API Key
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-white text-sm font-medium" style={{textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)'}}>
+                      OpenAI API Key
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full bg-current ${getStatusColor('openai')}`}></div>
+                      <span className={`text-xs ${getStatusColor('openai')}`}>
+                        {getStatusText('openai')}
+                      </span>
+                    </div>
+                  </div>
                   <input
                     type="password"
                     className="glass-input w-full"
                     value={settings.openaiApiKey || ''}
-                    onChange={(e) => onUpdateSettings({ openaiApiKey: e.target.value })}
+                    onChange={(e) => handleApiKeyChange('openai', e.target.value)}
                     placeholder="Enter your OpenAI API key"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Claude API Key
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-white text-sm font-medium" style={{textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)'}}>
+                      Claude API Key
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full bg-current ${getStatusColor('claude')}`}></div>
+                      <span className={`text-xs ${getStatusColor('claude')}`}>
+                        {getStatusText('claude')}
+                      </span>
+                    </div>
+                  </div>
                   <input
                     type="password"
                     className="glass-input w-full"
                     value={settings.claudeApiKey || ''}
-                    onChange={(e) => onUpdateSettings({ claudeApiKey: e.target.value })}
+                    onChange={(e) => handleApiKeyChange('claude', e.target.value)}
                     placeholder="Enter your Claude API key"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    DeepSeek API Key
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-white text-sm font-medium" style={{textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)'}}>
+                      DeepSeek API Key
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full bg-current ${getStatusColor('deepseek')}`}></div>
+                      <span className={`text-xs ${getStatusColor('deepseek')}`}>
+                        {getStatusText('deepseek')}
+                      </span>
+                    </div>
+                  </div>
                   <input
                     type="password"
                     className="glass-input w-full"
                     value={settings.deepseekApiKey || ''}
-                    onChange={(e) => onUpdateSettings({ deepseekApiKey: e.target.value })}
+                    onChange={(e) => handleApiKeyChange('deepseek', e.target.value)}
                     placeholder="Enter your DeepSeek API key"
                   />
                 </div>

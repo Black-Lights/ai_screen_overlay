@@ -50,8 +50,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     imagePath?: string;
     provider: string;
     apiKey: string;
+    chatId?: number;
+    modelId?: string;
   }): Promise<string> => 
     ipcRenderer.invoke('send-ai-message', params),
+
+  // API Key management
+  getApiKeysStatus: (): Promise<{
+    openai: 'ready' | 'invalid' | 'error' | 'not-configured';
+    claude: 'ready' | 'invalid' | 'error' | 'not-configured';
+    deepseek: 'ready' | 'invalid' | 'error' | 'not-configured';
+  }> => 
+    ipcRenderer.invoke('get-api-keys-status'),
+
+  saveApiKey: (provider: string, apiKey: string): Promise<void> => 
+    ipcRenderer.invoke('save-api-key', provider, apiKey),
 
   // Window operations
   minimizeWindow: (): Promise<void> => 

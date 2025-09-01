@@ -22,81 +22,172 @@
 
 @layer components {
   .glass-panel {
-    @apply backdrop-blur-lg bg-white/10 border border-white/20 shadow-2xl rounded-xl;
+    @apply backdrop-blur-xl border border-white/30 shadow-2xl rounded-xl;
+    background: rgba(0, 0, 0, 0.7);
   }
   
   .glass-button {
-    @apply backdrop-blur-md bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg px-4 py-2 transition-all duration-200 text-white font-medium;
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+    color: white;
+    font-weight: 500;
+  }
+  
+  .glass-button:hover {
+    background: rgba(0, 0, 0, 0.6);
   }
   
   .glass-input {
-    @apply backdrop-blur-md bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent;
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: white;
+  }
+  
+  .glass-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .glass-input:focus {
+    outline: none;
+    border-color: rgb(59, 130, 246);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
   }
   
   .message-user {
-    @apply bg-blue-500 text-white rounded-lg px-4 py-2 max-w-xs ml-auto;
+    background: rgb(59, 130, 246);
+    color: white;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    max-width: 20rem;
+    margin-left: auto;
   }
   
   .message-ai {
-    @apply bg-gray-100 text-gray-800 rounded-lg px-4 py-2 max-w-xs mr-auto;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    max-width: 20rem;
+    margin-right: auto;
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
   
   .chat-input {
-    @apply w-full p-3 rounded-lg bg-white/20 backdrop-blur-md border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none min-h-[50px] max-h-32;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    resize: none;
+    min-height: 50px;
+    max-height: 8rem;
+  }
+  
+  .chat-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .chat-input:focus {
+    outline: none;
+    border-color: rgb(59, 130, 246);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
   }
   
   .title-bar {
-    @apply flex items-center justify-between p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-lg border-b border-white/30 flex-shrink-0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
     min-height: 52px;
   }
   
   .window-controls {
-    @apply flex space-x-2;
+    display: flex;
+    gap: 0.5rem;
   }
   
   .window-control-btn {
-    @apply w-3 h-3 rounded-full transition-all duration-200 hover:scale-110;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  
+  .window-control-btn:hover {
+    transform: scale(1.1);
   }
   
   .btn-close {
-    @apply bg-red-500 hover:bg-red-600;
+    background: rgb(239, 68, 68);
+  }
+  
+  .btn-close:hover {
+    background: rgb(220, 38, 38);
   }
   
   .btn-minimize {
-    @apply bg-yellow-500 hover:bg-yellow-600;
+    background: rgb(234, 179, 8);
+  }
+  
+  .btn-minimize:hover {
+    background: rgb(202, 138, 4);
   }
   
   .btn-maximize {
-    @apply bg-green-500 hover:bg-green-600;
+    background: rgb(34, 197, 94);
+  }
+  
+  .btn-maximize:hover {
+    background: rgb(22, 163, 74);
   }
 
   /* Responsive layout utilities */
   .overlay-content {
-    @apply flex flex-col h-full;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   
   .overlay-section {
-    @apply flex-shrink-0;
+    flex-shrink: 0;
   }
   
   .overlay-main {
-    @apply flex-1 min-h-0 overflow-hidden;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   /* Interaction states */
   .is-dragging {
-    @apply cursor-move;
+    cursor: move;
     transition: none !important;
   }
   
   .is-resizing {
-    @apply cursor-se-resize;
+    cursor: se-resize;
     transition: none !important;
   }
 
   /* Resize handle */
   .resize-handle {
-    @apply absolute bottom-0 right-0 cursor-se-resize;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    cursor: se-resize;
     width: 20px;
     height: 20px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.3));
@@ -210,4 +301,184 @@
   background: rgba(59, 130, 246, 0.1);
   pointer-events: none;
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+/* Model selector styles */
+.model-selector {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.model-dropdown {
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.model-dropdown option {
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 4px 8px;
+}
+
+.model-dropdown:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.model-info {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.model-description {
+  margin-bottom: 4px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.model-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+}
+
+.model-details span {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.pricing {
+  color: #10b981;
+}
+
+.capability {
+  color: #f59e0b;
+}
+
+/* Enhanced text readability */
+.bg-white\/15 {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.bg-white\/25 {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Better text contrast for provider buttons */
+button[class*="bg-white"] {
+  backdrop-filter: blur(8px);
+}
+
+button[class*="bg-white"] .text-white\/60 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Markdown content styles */
+.markdown-content {
+  line-height: 1.6;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content pre {
+  margin: 0.75rem 0;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.markdown-content code {
+  font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.markdown-content pre code {
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-content blockquote {
+  margin: 0.75rem 0;
+  padding-left: 1rem;
+  border-left: 4px solid rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  width: 100%;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+/* Select text enhancement */
+.select-text {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }

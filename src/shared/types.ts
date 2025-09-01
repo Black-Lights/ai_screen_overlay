@@ -5,6 +5,7 @@ export interface Message {
   content: string;
   imagePath?: string;
   provider?: string;
+  model?: string;
   timestamp: string;
 }
 
@@ -36,6 +37,11 @@ export interface AppSettings {
   claudeApiKey?: string;
   deepseekApiKey?: string;
   selectedProvider: string;
+  selectedModels?: {
+    openai?: string;
+    claude?: string;
+    deepseek?: string;
+  };
   overlayPosition: {
     x: number;
     y: number;

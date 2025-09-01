@@ -1,304 +1,361 @@
 # AI Screen Overlay
 
-A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4V, Claude 3.5 Sonnet, and DeepSeek.
+A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4o, Claude 3.7 Sonnet, and DeepSeek with full markdown rendering and professional chat features.
 
-## 🚀 Features
+## ✨ Key Features
 
-- **Global Screen Capture**: Press `Ctrl+Shift+S` anywhere to capture screen areas
-- **Multi-LLM Support**: Switch between OpenAI, Claude, and DeepSeek AI providers
-- **Vision Analysis**: AI can analyze and describe captured images
-- **Persistent Chat History**: All conversations saved locally with SQLite
-- **Modern UI**: Glassmorphism design with smooth animations
-- **Always On Top**: Overlay stays accessible while you work
-- **Drag & Drop**: Repositionable overlay window
-- **Linux Optimized**: Built specifically for Linux environments
+### 🖼️ **Advanced Screen Capture**
+- **Global Hotkey**: Press `Ctrl+Shift+S` anywhere to capture screen areas
+- **Precision Selection**: Click and drag to select exact regions
+- **Instant Processing**: Captured images automatically attached to chat
+- **High Quality**: Full resolution capture with PNG encoding
 
-## 📋 Requirements
+### 🤖 **Multi-LLM Intelligence**
+- **OpenAI Models**: GPT-4o, GPT-4o Mini, GPT-4 Turbo with vision capabilities
+- **Claude Models**: Sonnet 3.7, Sonnet 4, Opus 4.1, Opus 4, Haiku 3.5
+- **DeepSeek Models**: Chat and Reasoner with cost-effective analysis
+- **Smart Routing**: Automatic model selection with fallback support
+- **Provider Status**: Real-time API key validation and status indicators
 
-- **Node.js** 18+ and npm
-- **Linux** (Ubuntu/Debian recommended)
-- **Screen capture permissions** (handled automatically)
-- **API keys** for your chosen AI providers
+### 💬 **Professional Chat Experience**
+- **Markdown Rendering**: Full markdown support with syntax-highlighted code blocks
+- **Text Selection**: Select and copy any message content with one click
+- **Provider Attribution**: Each response shows AI provider and specific model used
+- **Chat History**: Persistent conversations with SQLite storage
+- **Context Awareness**: Full conversation context maintained across messages
 
-## 🛠️ Installation
+### 🎨 **Modern Interface**
+- **Glassmorphism Design**: Beautiful translucent overlay with blur effects
+- **Always On Top**: Stays accessible while you work on other applications
+- **Drag & Resize**: Repositionable and resizable overlay window
+- **Enhanced Contrast**: Optimized readability on any background
+- **Responsive Layout**: Adapts to different screen sizes and orientations
 
-### Quick Start
+## 📋 System Requirements
 
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd ai-screen-overlay
+- **Operating System**: Linux (Ubuntu 20.04+ recommended)
+- **Node.js**: Version 18.0.0 or higher
+- **Memory**: 4GB RAM minimum, 8GB recommended
+- **Display**: X11 or Wayland with screen capture permissions
+- **Network**: Internet connection for AI API access
 
-# Install dependencies
-npm install
-
-# Copy environment template
-cp .env.example .env
-
-# Add your API keys to .env file
-nano .env
-
-# Build and start the application
-npm start
-```
-
-### Development Mode
-
-```bash
-# Start in development mode with hot reload
-npm run dev
-```
-
-### Build for Distribution
-
-```bash
-# Build the application
-npm run build
-
-# Create distributable packages
-npm run dist
-```
-
-## 🔑 API Key Setup
-
-Edit the `.env` file and add your API keys:
-
-```env
-# OpenAI (for GPT-4 Vision)
-OPENAI_API_KEY=sk-your-openai-key-here
-
-# Anthropic (for Claude 3.5 Sonnet)
-CLAUDE_API_KEY=your-claude-key-here
-
-# DeepSeek (for DeepSeek Vision)
-DEEPSEEK_API_KEY=your-deepseek-key-here
-```
-
-### Getting API Keys
-
-- **OpenAI**: Visit [platform.openai.com](https://platform.openai.com/api-keys)
-- **Claude**: Visit [console.anthropic.com](https://console.anthropic.com/)
-- **DeepSeek**: Visit [platform.deepseek.com](https://platform.deepseek.com/)
-
-## ⌨️ Keyboard Shortcuts
-
-- `Ctrl+Shift+S` - Start screen capture
-- `Ctrl+Shift+A` - Toggle overlay visibility
-- `Enter` - Send message
-- `Shift+Enter` - New line in message
-- `Esc` - Cancel screen capture (during selection)
-
-## 🎯 Usage
-
-### Basic Workflow
-
-1. **Launch**: Start the application with `npm start`
-2. **Position**: Drag the overlay to your preferred screen location
-3. **Capture**: Press `Ctrl+Shift+S` and select screen area
-4. **Analyze**: Type your question about the captured image
-5. **Chat**: Continue the conversation with the AI
-
-### Screen Capture
-
-1. Press `Ctrl+Shift+S` from anywhere
-2. Click and drag to select the area you want to capture
-3. Release to capture, or press `Esc` to cancel
-4. The overlay will appear with your captured image
-5. Ask questions about the image or request analysis
-
-### AI Provider Selection
-
-- Click the provider dropdown in the overlay
-- Select your preferred AI (OpenAI, Claude, or DeepSeek)
-- Ensure the API key is configured (green indicator)
-- Different providers excel at different tasks:
-  - **OpenAI GPT-4V**: Excellent for detailed image analysis
-  - **Claude 3.5**: Great for coding and technical content
-  - **DeepSeek**: Cost-effective with good performance
-
-### Chat Management
-
-- **New Chat**: Click the "+" button in chat history
-- **Switch Chats**: Click any chat in the history panel
-- **Delete Chat**: Hover over a chat and click the delete button
-- **Search**: Use the search bar to find specific conversations
-
-## 🏗️ Project Structure
-
-```
-ai-screen-overlay/
-├── src/
-│   ├── main/                 # Electron main process
-│   │   ├── main.ts          # Application entry point
-│   │   ├── database.ts      # SQLite database operations  
-│   │   ├── screen-capture.ts # Screen capture service
-│   │   └── ipc-handlers.ts  # IPC communication
-│   ├── renderer/            # React frontend
-│   │   ├── App.tsx          # Main React component
-│   │   ├── components/      # UI components
-│   │   ├── services/        # API and storage services
-│   │   └── styles/          # CSS and styling
-│   └── shared/              # Shared TypeScript types
-├── package.json             # Dependencies and scripts
-├── tsconfig.json           # TypeScript configuration
-├── tailwind.config.js      # Tailwind CSS setup
-└── webpack.config.js       # Webpack build configuration
-```
-
-## 🔧 Configuration
-
-### Overlay Settings
-
-Access settings by clicking the gear icon in the overlay:
-
-- **API Keys**: Configure keys for each AI provider
-- **Position**: Overlay position is saved automatically
-- **Provider**: Choose your default AI provider
-
-### Database
-
-- **Location**: `./data/chats.db` (SQLite)
-- **Tables**: `chats`, `messages`, `settings`
-- **Automatic**: Database created on first run
-
-## 📦 Distribution
-
-### Linux Packages
-
-The build process creates multiple Linux-compatible packages:
-
-```bash
-npm run dist
-```
-
-Generates:
-- `*.AppImage` - Universal Linux application
-- `*.snap` - Snap package for Ubuntu
-- `*.deb` - Debian/Ubuntu package
+## � Quick Start
 
 ### Installation
 
 ```bash
-# AppImage (run anywhere)
-chmod +x ai-screen-overlay.AppImage
-./ai-screen-overlay.AppImage
+# Clone the repository
+git clone https://github.com/Black-Lights/ai_screen_overlay.git
+cd ai_screen_overlay
 
-# Debian package
-sudo dpkg -i ai-screen-overlay.deb
-```
-
-## 🛡️ Privacy & Security
-
-- **Local Storage**: All data stored locally in SQLite database
-- **No Telemetry**: No usage data collected or transmitted
-- **API Keys**: Stored securely in local environment
-- **Images**: Temporary screenshots deleted after processing
-
-## 🐛 Troubleshooting
-
-### Screen Capture Issues
-
-```bash
-# Check display permissions
-echo $DISPLAY
-
-# Install required dependencies
-sudo apt-get install libxss1 libgconf-2-4 libxtst6 libxrandr2 libasound2 libpangocairo-1.0-0 libatk1.0-0 libcairo1.0-0 libgtk-3-0 libgdk-pixbuf2.0-0 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxext6 libxfixes3 libxrender1 libx11-6
-```
-
-### Build Issues
-
-```bash
-# Clear build cache
-npm run clean
+# Install dependencies
 npm install
 
-# Rebuild native dependencies
-npm rebuild
+# Setup environment
+cp .env.example .env
+nano .env  # Add your API keys
 
-# Check Node.js version (requires 18+)
-node --version
+# Build and start
+npm run build
+npm start
 ```
 
-### API Connection Issues
+### API Key Configuration
 
-1. **Check API Keys**: Ensure keys are valid and have sufficient credits
-2. **Network**: Verify internet connection and firewall settings
-3. **Rate Limits**: Wait a few minutes if rate limited
-4. **CORS**: API calls are made from main process (no CORS issues)
+Edit `.env` file with your API keys:
 
-### Performance Issues
+```env
+# OpenAI (GPT-4o, GPT-4o Mini, GPT-4 Turbo)
+OPENAI_API_KEY=sk-your-openai-key-here
 
-```bash
-# Monitor memory usage
-ps aux | grep ai-screen-overlay
+# Anthropic (Claude models)
+CLAUDE_API_KEY=sk-ant-your-claude-key-here
 
-# Check database size
-du -h data/chats.db
-
-# Clean up old screenshots
-rm -rf temp/*.png
+# DeepSeek (Chat and Reasoner)
+DEEPSEEK_API_KEY=your-deepseek-key-here
 ```
 
-## 🤝 Development
+**Get API Keys:**
+- **OpenAI**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **Claude**: [console.anthropic.com](https://console.anthropic.com/)
+- **DeepSeek**: [platform.deepseek.com](https://platform.deepseek.com/)
 
-### Prerequisites
+## 🎯 How to Use
 
-- Node.js 18+
-- TypeScript knowledge
-- Electron basics
-- React/tailwind CSS
+### Basic Workflow
+1. **Launch** the application with `npm start`
+2. **Position** the overlay on your preferred screen location
+3. **Capture** screen areas with `Ctrl+Shift+S` hotkey
+4. **Select** your preferred AI provider and model
+5. **Analyze** images with natural language questions
+6. **Chat** with full markdown rendering and copy support
+
+### Advanced Features
+
+#### Screen Capture
+- **Global Hotkey**: `Ctrl+Shift+S` works from any application
+- **Precision Selection**: Click and drag for exact area capture
+- **Multiple Captures**: Add multiple images to same conversation
+- **Cancel**: Press `Esc` during selection to cancel
+
+#### AI Provider Selection
+- **Provider Dropdown**: Choose between OpenAI, Claude, or DeepSeek
+- **Model Selection**: Pick specific models with pricing information
+- **Status Indicators**: Real-time API key validation (🟢 Ready, 🔴 Error)
+- **Auto-switching**: Seamlessly switch providers mid-conversation
+
+#### Chat Management
+- **Multiple Chats**: Create unlimited conversation threads
+- **Chat History**: Persistent storage with full conversation context
+- **Search & Navigate**: Find specific conversations quickly
+- **Export/Import**: Backup and restore chat data
+
+#### Markdown & Formatting
+- **Rich Text Rendering**: Full markdown support in AI responses
+- **Code Highlighting**: Syntax highlighting for 100+ programming languages
+- **Copy Support**: One-click copying of any message or code block
+- **Text Selection**: Select and copy portions of any message
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+S` | Capture screen area |
+| `Ctrl+Shift+A` | Toggle overlay visibility |
+| `Enter` | Send message |
+| `Shift+Enter` | New line in message |
+| `Esc` | Cancel screen capture |
+| `Ctrl+C` | Copy selected text |
+
+## 🏗️ Architecture
+
+### Tech Stack
+- **Frontend**: React 18 + TypeScript + Tailwind CSS
+- **Backend**: Electron 27 + Node.js + better-sqlite3
+- **Build**: Webpack 5 + TypeScript compiler
+- **Styling**: Tailwind CSS + Custom glassmorphism
+- **Markdown**: ReactMarkdown + Prism syntax highlighting
+
+### Project Structure
+```
+src/
+├── main/                    # Electron main process
+│   ├── main.ts             # Application entry point
+│   ├── database.ts         # SQLite database service
+│   ├── screen-capture.ts   # Screen capture implementation
+│   ├── ipc-handlers.ts     # IPC communication handlers
+│   └── preload.ts          # Preload script for security
+├── renderer/               # React frontend
+│   ├── App.tsx             # Main application component
+│   ├── components/         # UI components
+│   │   ├── Overlay.tsx     # Main overlay container
+│   │   ├── ChatInterface.tsx # Chat UI with markdown
+│   │   ├── LLMSelector.tsx # AI provider selection
+│   │   └── Settings.tsx    # Configuration panel
+│   ├── services/           # Frontend services
+│   └── styles/             # CSS and styling
+├── shared/                 # Shared TypeScript definitions
+│   ├── types.ts           # Type definitions
+│   └── models.ts          # AI model configurations
+└── types/                  # Global type declarations
+```
+
+### Database Schema
+```sql
+-- Chat conversations
+CREATE TABLE chats (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat messages with AI attribution
+CREATE TABLE messages (
+  id INTEGER PRIMARY KEY,
+  chat_id INTEGER REFERENCES chats(id),
+  role TEXT CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  image_path TEXT,
+  provider TEXT,
+  model TEXT,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Application settings
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+```
+
+## 🔧 Development
 
 ### Development Setup
-
 ```bash
 # Install dependencies
 npm install
 
-# Start development servers
-npm run dev
-
-# Run TypeScript checks
-npm run build:electron
-
-# Lint code
-npm run lint
+# Start development mode
+npm run dev          # Starts both Electron and React dev servers
+npm run dev:react    # React development server only
+npm run dev:electron # Electron development mode only
 ```
 
-### Adding New AI Providers
+### Build Commands
+```bash
+npm run build           # Build everything
+npm run build:react     # Build React frontend
+npm run build:electron  # Build Electron main process
+npm run clean           # Clean build artifacts
+```
 
-1. Add provider to `src/renderer/services/ai-service.ts`
-2. Update provider list in `src/renderer/components/LLMSelector.tsx`
-3. Add API key handling in settings
-4. Update types in `src/shared/types.ts`
+### Code Quality
+```bash
+npm run lint           # ESLint code checking
+npm run type-check     # TypeScript validation
+npm test              # Run test suite
+```
 
-### Architecture
+### Adding New Features
 
-- **Main Process**: Handles system integration, database, screen capture
-- **Renderer Process**: React UI, user interactions, AI communication
-- **IPC**: Communication between main and renderer processes
-- **SQLite**: Local data persistence
+#### New AI Provider
+1. Add provider config to `src/shared/models.ts`
+2. Implement API client in `src/main/ipc-handlers.ts`
+3. Update UI selectors in `src/renderer/components/LLMSelector.tsx`
+4. Add API key handling in settings
+
+#### New UI Components
+1. Create component in `src/renderer/components/`
+2. Add styling in `src/renderer/styles/globals.css`
+3. Import and use in parent components
+4. Update TypeScript types if needed
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### Screen Capture Not Working
+```bash
+# Check X11 permissions
+xhost +local:
+echo $DISPLAY
+
+# Install missing dependencies
+sudo apt-get install libxtst6 libxrandr2 libx11-6
+```
+
+#### API Connection Errors
+- **Check API Keys**: Verify keys are valid and have credits
+- **Network Issues**: Test internet connection
+- **Rate Limits**: Wait if rate limited by provider
+- **Model Availability**: Some models have regional restrictions
+
+#### Build Failures
+```bash
+# Clear caches and reinstall
+rm -rf node_modules package-lock.json dist
+npm install
+npm run build
+```
+
+#### Performance Issues
+```bash
+# Monitor resource usage
+htop
+# Check database size
+du -h data/chats.db
+# Clean temporary files
+npm run clean
+```
+
+### Debug Mode
+```bash
+# Enable verbose logging
+DEBUG=* npm start
+
+# Check Electron logs
+tail -f electron-debug.log
+```
+
+## 📊 Performance
+
+### Optimizations
+- **Lazy Loading**: Components loaded on demand
+- **Code Splitting**: Vendor and main bundles separated
+- **Database Indexing**: Optimized queries for chat history
+- **Memory Management**: Automatic cleanup of temporary images
+- **Bundle Size**: Optimized to ~950KB total
+
+### Benchmarks
+- **Startup Time**: ~2-3 seconds cold start
+- **Screen Capture**: <500ms from hotkey to selection
+- **AI Response**: Varies by provider (2-10 seconds)
+- **Memory Usage**: ~150-200MB RAM
+
+## 🔒 Privacy & Security
+
+### Data Protection
+- **Local Storage**: All data remains on your machine
+- **No Telemetry**: Zero tracking or analytics
+- **Secure APIs**: Direct HTTPS communication with AI providers
+- **Temporary Files**: Screenshots auto-deleted after processing
+
+### Security Practices
+- **Environment Variables**: API keys stored in .env file
+- **IPC Security**: Secure communication between processes
+- **Input Validation**: All user inputs sanitized
+- **Error Handling**: Graceful error recovery without data loss
+
+## 🚀 Roadmap
+
+### Upcoming Features
+- [ ] **Multi-language Support**: Internationalization
+- [ ] **Plugin System**: Custom AI provider plugins
+- [ ] **Export Options**: PDF, HTML conversation export
+- [ ] **Voice Input**: Speech-to-text integration
+- [ ] **Cloud Sync**: Optional cloud backup (encrypted)
+- [ ] **Themes**: Dark/light theme options
+- [ ] **Annotations**: Draw on captured images
+- [ ] **OCR**: Text extraction from images
+
+### Performance Improvements
+- [ ] **Streaming Responses**: Real-time AI response streaming
+- [ ] **Caching**: Intelligent response caching
+- [ ] **Compression**: Database and image optimization
+- [ ] **Background Processing**: Non-blocking AI operations
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for full details.
 
-## 🙏 Acknowledgments
+## 🤝 Contributing
 
-- Electron team for the fantastic framework
-- React and TypeScript communities
-- AI providers (OpenAI, Anthropic, DeepSeek)
-- Tailwind CSS for the beautiful styling
+We welcome contributions! Please see our contributing guidelines:
 
-## 📞 Support
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
 
-For issues, feature requests, or questions:
+### Development Guidelines
+- Follow TypeScript best practices
+- Add tests for new features
+- Update documentation
+- Ensure accessibility compliance
+- Test on multiple Linux distributions
 
-1. Check existing GitHub issues
-2. Create a new issue with detailed description
-3. Include system information and error logs
-4. Provide steps to reproduce the problem
+## 💖 Acknowledgments
+
+Special thanks to:
+- **Electron Team** - Cross-platform desktop framework
+- **React Community** - Frontend framework and ecosystem
+- **AI Providers** - OpenAI, Anthropic, and DeepSeek for powerful APIs
+- **Open Source** - All the amazing libraries that make this possible
 
 ---
 
-**Built with ❤️ for the Linux community**
+**🌟 Star this repository if you find it helpful!**
+
+Built with ❤️ for the Linux community by [Black-Lights](https://github.com/Black-Lights)

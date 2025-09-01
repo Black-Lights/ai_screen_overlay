@@ -1,36 +1,7 @@
+/// <reference path="../types/global.d.ts" />
 import React, { useState, useEffect } from 'react';
 import Overlay from './components/Overlay';
 import { Chat, Message, AppSettings, ScreenCapture } from '@/shared/types';
-
-declare global {
-  interface Window {
-    electronAPI: {
-      getApiKeys: () => { openai: string; claude: string; deepseek: string; };
-      createChat: (title: string) => Promise<Chat>;
-      getChats: () => Promise<Chat[]>;
-      getChat: (id: number) => Promise<Chat>;
-      updateChatTitle: (id: number, title: string) => Promise<void>;
-      deleteChat: (id: number) => Promise<void>;
-      saveMessage: (message: Omit<Message, 'id' | 'timestamp'>) => Promise<Message>;
-      getChatMessages: (chatId: number) => Promise<Message[]>;
-      deleteMessage: (id: number) => Promise<void>;
-      getSettings: () => Promise<AppSettings>;
-      saveSettings: (settings: Partial<AppSettings>) => Promise<void>;
-      sendAIMessage: (params: {
-        text: string;
-        imagePath?: string;
-        provider: string;
-        apiKey: string;
-        chatId?: number;
-      }) => Promise<string>;
-      minimizeWindow: () => Promise<void>;
-      closeWindow: () => Promise<void>;
-      toggleWindow: () => Promise<void>;
-      onScreenCaptureComplete: (callback: (data: ScreenCapture) => void) => void;
-      onScreenCaptureError: (callback: (error: string) => void) => void;
-    };
-  }
-}
 
 const App: React.FC = () => {
   console.log('🚀 App component starting...');
@@ -179,25 +150,29 @@ const App: React.FC = () => {
 
       // Get API key for selected provider
       const apiKey = getApiKeyForProvider(settings.selectedProvider);
+      console.log(`🔑 Frontend sending provider: ${settings.selectedProvider}, apiKey starts with: ${apiKey?.substring(0, 10)}...`);
       if (!apiKey) {
         throw new Error(`API key not configured for ${settings.selectedProvider}`);
       }
 
       // Send to AI
+      const selectedModel = settings.selectedModels?.[settings.selectedProvider];
       const aiResponse = await window.electronAPI.sendAIMessage({
         text,
         imagePath,
         provider: settings.selectedProvider,
         apiKey,
-        chatId: currentChat.id
+        chatId: currentChat.id,
+        modelId: selectedModel
       });
 
-      // Save AI response
+      // Save AI response with provider and model info
       const aiMessage = await window.electronAPI.saveMessage({
         chatId: currentChat.id,
         role: 'assistant',
-        content: aiResponse,
-        provider: settings.selectedProvider
+        content: aiResponse.content, // Extract content from structured response
+        provider: settings.selectedProvider,
+        model: aiResponse.model // Extract model from structured response
       });
 
       setMessages(prev => [...prev, aiMessage]);
@@ -208,6 +183,13 @@ const App: React.FC = () => {
   };
 
   const getApiKeyForProvider = (provider: string): string | undefined => {
+    console.log(`🔍 getApiKeyForProvider called for: ${provider}`);
+    console.log(`📋 Available API keys in settings:`, {
+      openai: settings.openaiApiKey?.substring(0, 10) + '...',
+      claude: settings.claudeApiKey?.substring(0, 10) + '...',
+      deepseek: settings.deepseekApiKey?.substring(0, 10) + '...'
+    });
+    
     switch (provider) {
       case 'openai':
         return settings.openaiApiKey;

@@ -63,10 +63,24 @@ class DatabaseService {
         content TEXT NOT NULL,
         image_path TEXT,
         provider TEXT,
+        model TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
     console.log('✅ Messages table ready');
+
+    // Add model column migration for existing tables
+    console.log('🔄 Checking for model column migration...');
+    try {
+      this.db.exec('ALTER TABLE messages ADD COLUMN model TEXT');
+      console.log('✅ Added model column to messages table');
+    } catch (error: any) {
+      if (error.message && error.message.includes('duplicate column name')) {
+        console.log('✅ Model column already exists');
+      } else {
+        console.log('⚠️ Error adding model column:', error.message);
+      }
+    }
 
     console.log('⚙️ Creating settings table...');
     // Create settings table
@@ -147,8 +161,8 @@ class DatabaseService {
   // Message operations
   saveMessage(message: Omit<Message, 'id' | 'timestamp'>): Message {
     const stmt = this.db.prepare(`
-      INSERT INTO messages (chat_id, role, content, image_path, provider)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO messages (chat_id, role, content, image_path, provider, model)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
     
     const result = stmt.run(
@@ -156,7 +170,8 @@ class DatabaseService {
       message.role,
       message.content,
       message.imagePath || null,
-      message.provider || null
+      message.provider || null,
+      message.model || null
     );
 
     // Update chat's updated_at timestamp
@@ -172,6 +187,7 @@ class DatabaseService {
       content: message.content,
       imagePath: message.imagePath,
       provider: message.provider,
+      model: message.model,
       timestamp: new Date().toISOString()
     };
   }
@@ -189,6 +205,7 @@ class DatabaseService {
       content: row.content,
       imagePath: row.image_path,
       provider: row.provider,
+      model: row.model,
       timestamp: row.timestamp
     }));
   }
@@ -248,6 +265,41 @@ class DatabaseService {
     });
   }
 
+  syncEnvToDatabase(): void {
+    console.log('🔄 Syncing .env keys to database...');
+    const envPath = path.join(process.cwd(), '.env');
+    
+    if (!fs.existsSync(envPath)) {
+      console.log('⚠️ .env file not found, skipping sync');
+      return;
+    }
+
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const openaiMatch = envContent.match(/OPENAI_API_KEY=(.+)/);
+    const claudeMatch = envContent.match(/CLAUDE_API_KEY=(.+)/);
+    const deepseekMatch = envContent.match(/DEEPSEEK_API_KEY=(.+)/);
+
+    if (openaiMatch && openaiMatch[1] && openaiMatch[1] !== 'your_openai_api_key_here') {
+      const key = openaiMatch[1].trim();
+      this.setSetting('openaiApiKey', key);
+      console.log('✅ Synced OpenAI API key to database');
+    }
+
+    if (claudeMatch && claudeMatch[1] && claudeMatch[1] !== 'your_claude_api_key_here') {
+      const key = claudeMatch[1].trim();
+      this.setSetting('claudeApiKey', key);
+      console.log('✅ Synced Claude API key to database');
+    }
+
+    if (deepseekMatch && deepseekMatch[1] && deepseekMatch[1] !== 'your_deepseek_api_key_here') {
+      const key = deepseekMatch[1].trim();
+      this.setSetting('deepseekApiKey', key);
+      console.log('✅ Synced DeepSeek API key to database');
+    }
+
+    console.log('✅ Env to database sync completed');
+  }
+
   close(): void {
     this.db.close();
   }
@@ -265,6 +317,10 @@ export async function initDatabase(): Promise<void> {
     
     console.log('📋 Calling createTables...');
     dbService['createTables'](); // Call private method
+    
+    console.log('🔄 Syncing .env keys to database...');
+    dbService.syncEnvToDatabase();
+    
     console.log('✅ initDatabase completed successfully');
   } catch (error) {
     console.error('❌ Error in initDatabase:', error);
