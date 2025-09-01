@@ -46,7 +46,8 @@
   }
   
   .title-bar {
-    @apply flex items-center justify-between p-3 bg-white/10 backdrop-blur-lg border-b border-white/20 flex-shrink-0;
+    @apply flex items-center justify-between p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-lg border-b border-white/30 flex-shrink-0;
+    min-height: 52px;
   }
   
   .window-controls {

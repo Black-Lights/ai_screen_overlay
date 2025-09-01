@@ -42,6 +42,12 @@ const Overlay: React.FC<OverlayProps> = ({
   useEffect(() => {
     setPosition(settings.overlayPosition);
     setSize(settings.overlaySize);
+    
+    // Ensure the overlay matches the current window size initially
+    if (overlayRef.current) {
+      const rect = overlayRef.current.getBoundingClientRect();
+      setSize({ width: rect.width || 500, height: rect.height || 700 });
+    }
   }, [settings.overlayPosition, settings.overlaySize]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -181,17 +187,23 @@ const Overlay: React.FC<OverlayProps> = ({
           </button>
 
           {/* Window Controls */}
-          <div className="window-controls">
+          <div className="window-controls flex items-center space-x-2">
             <button
               onClick={handleMinimize}
-              className="window-control-btn btn-minimize"
+              className="w-4 h-4 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-all duration-200 hover:scale-110 flex items-center justify-center group"
               title="Minimize"
-            />
+            >
+              <div className="w-2 h-0.5 bg-yellow-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </button>
             <button
               onClick={handleClose}
-              className="window-control-btn btn-close"
+              className="w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-200 hover:scale-110 flex items-center justify-center group"
               title="Close"
-            />
+            >
+              <svg className="w-2.5 h-2.5 text-red-900 opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>

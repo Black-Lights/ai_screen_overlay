@@ -237,7 +237,7 @@ class DatabaseService {
       deepseekApiKey: settings.deepseekApiKey || process.env.DEEPSEEK_API_KEY || '',
       selectedProvider: settings.selectedProvider || 'openai',
       overlayPosition: settings.overlayPosition || { x: 100, y: 100 },
-      overlaySize: settings.overlaySize || { width: 400, height: 600 }
+      overlaySize: settings.overlaySize || { width: 500, height: 700 }
     };
   }
 

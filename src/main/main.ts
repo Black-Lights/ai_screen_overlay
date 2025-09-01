@@ -57,8 +57,8 @@ class Application {
     this.mainWindow = new BrowserWindow({
       height: 700,
       width: 500,
-      minHeight: 300,
-      minWidth: 280,
+      minHeight: 400,
+      minWidth: 350,
       maxHeight: 1400,
       maxWidth: 1000,
       show: false,
@@ -90,6 +90,7 @@ class Application {
     this.mainWindow.once('ready-to-show', () => {
       console.log('👁️ Window ready to show');
       this.mainWindow?.show();
+      this.mainWindow?.focus();
       
       // Auto-test screen capture after 5 seconds for debugging
       setTimeout(() => {
