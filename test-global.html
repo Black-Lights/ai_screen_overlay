@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Global Test</title>
+</head>
+<body>
+    <h1>Testing Global Variable</h1>
+    <script>
+        console.log('Testing global variable...');
+        try {
+            console.log('global:', typeof global);
+            console.log('globalThis:', typeof globalThis);
+            console.log('window:', typeof window);
+        } catch (error) {
+            console.error('Global test error:', error);
+        }
+    </script>
+</body>
+</html>
