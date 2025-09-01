@@ -183,7 +183,12 @@ const App: React.FC = () => {
     
     const newChat = await window.electronAPI.createChat(chatTitle);
     setChats(prev => [newChat, ...prev]);
+    
+    // Automatically switch to the new chat
+    setCurrentChat(newChat);
     setMessages([]);
+    
+    console.log('✅ Created and switched to new chat:', chatTitle);
     return newChat;
   };
 
@@ -191,6 +196,11 @@ const App: React.FC = () => {
     setCurrentChat(chat);
     const chatMessages = await window.electronAPI.getChatMessages(chat.id);
     setMessages(chatMessages);
+    
+    // Clear move to new chat option when switching chats
+    setShowMoveToNewChatOption(false);
+    
+    console.log('✅ Switched to chat:', chat.title);
   };
 
   const deleteChat = async (chatId: number) => {
