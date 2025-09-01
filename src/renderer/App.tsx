@@ -1,5 +1,5 @@
 /// <reference path="../types/global.d.ts" />
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Overlay from './components/Overlay';
 import { Chat, Message, AppSettings, ScreenCapture } from '@/shared/types';
 import { generateChatTitle, shouldAutoName } from './services/chatNamingService';
@@ -18,10 +18,33 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showMoveToNewChatOption, setShowMoveToNewChatOption] = useState(false);
 
+  // Refs to track current state in event listeners
+  const currentChatRef = useRef<Chat | null>(null);
+  const messagesRef = useRef<Message[]>([]);
+  const chatsRef = useRef<Chat[]>([]);
+
+  // Update refs when state changes
+  useEffect(() => {
+    currentChatRef.current = currentChat;
+  }, [currentChat]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    chatsRef.current = chats;
+  }, [chats]);
+
   useEffect(() => {
     console.log('📱 App useEffect triggered, initializing...');
-    initializeApp();
-    setupEventListeners();
+    const initApp = async () => {
+      await initializeApp();
+      // Set up event listeners after app is initialized
+      console.log('🔗 Setting up event listeners after app initialization...');
+      setupEventListeners();
+    };
+    initApp();
   }, []);
 
   const initializeApp = async () => {
@@ -64,36 +87,84 @@ const App: React.FC = () => {
 
   const setupEventListeners = () => {
     console.log('🔗 Setting up event listeners in React app');
-    // Listen for screen capture events
-    window.electronAPI.onScreenCaptureComplete((data: ScreenCapture) => {
-      console.log('📸 Screen capture complete event received:', data);
+    
+    // Listen for screen capture events with bound handler
+    const handleScreenCaptureEvent = (data: ScreenCapture) => {
+      console.log('📸 Screen capture event received:', data);
+      console.log('🔍 Current chat at event time:', currentChatRef.current ? `${currentChatRef.current.id}: ${currentChatRef.current.title}` : 'null');
+      console.log('📊 Messages count at event time:', messagesRef.current.length);
+      console.log('📦 Chats count at event time:', chatsRef.current.length);
+      
       handleScreenCapture(data);
-    });
+    };
 
-    window.electronAPI.onScreenCaptureError((error: string) => {
+    const handleScreenCaptureErrorEvent = (error: string) => {
       console.error('❌ Screen capture error received:', error);
-      // Could show a toast notification here
-    });
-    console.log('✅ Event listeners set up');
+    };
+
+    // Register the event listeners
+    if (window.electronAPI?.onScreenCaptureComplete) {
+      window.electronAPI.onScreenCaptureComplete(handleScreenCaptureEvent);
+      console.log('✅ onScreenCaptureComplete listener registered');
+    } else {
+      console.error('❌ onScreenCaptureComplete not available');
+    }
+    
+    if (window.electronAPI?.onScreenCaptureError) {
+      window.electronAPI.onScreenCaptureError(handleScreenCaptureErrorEvent);
+      console.log('✅ onScreenCaptureError listener registered');
+    } else {
+      console.error('❌ onScreenCaptureError not available');
+    }
+    
+    console.log('✅ Event listeners set up successfully');
   };
 
   const handleScreenCapture = async (captureData: ScreenCapture) => {
     console.log('🎯 Handling screen capture:', captureData);
     
-    let targetChat = currentChat;
+    // Use refs to get current state (avoiding closure issues)
+    const currentChatAtCapture = currentChatRef.current;
+    const messagesAtCapture = messagesRef.current;
+    const chatsAtCapture = chatsRef.current;
+    
+    console.log('📋 Current chat before capture:', currentChatAtCapture ? `${currentChatAtCapture.id}: ${currentChatAtCapture.title}` : 'No current chat');
+    console.log('📄 Current messages count before capture:', messagesAtCapture.length);
+    console.log('📦 Total chats count:', chatsAtCapture.length);
+    
+    let targetChat = currentChatAtCapture;
     if (!targetChat) {
       // Create a new chat if none exists
-      console.log('💬 Creating new chat for screen capture');
-      targetChat = await createNewChat('Screen Capture Chat');
+      console.log('💬 No current chat - creating new chat for screen capture');
+      // Generate next screen capture number
+      const screenCaptureNumbers = chatsAtCapture
+        .map(chat => {
+          const match = chat.title.match(/^Screen Capture Chat (\d+)$/);
+          return match ? parseInt(match[1]) : 0;
+        })
+        .filter(num => num > 0);
+      
+      const nextNumber = screenCaptureNumbers.length > 0 ? Math.max(...screenCaptureNumbers) + 1 : 1;
+      const chatTitle = `Screen Capture Chat ${nextNumber}`;
+      
+      targetChat = await window.electronAPI.createChat(chatTitle);
+      const updatedChats = [targetChat, ...chatsAtCapture];
+      setChats(updatedChats);
       setCurrentChat(targetChat);
+      setMessages([]);
+      
+      // Update refs immediately
+      currentChatRef.current = targetChat;
+      messagesRef.current = [];
+      chatsRef.current = updatedChats;
+      
+      console.log('✅ Created new screen capture chat:', chatTitle);
     } else {
-      console.log('📋 Using existing chat:', targetChat.title);
+      console.log('✅ Using existing current chat:', targetChat.title);
     }
     
-    console.log('📄 Current messages count:', messages.length);
-    
     // Create a message with the captured image
-    console.log('💬 Creating message with captured image...');
+    console.log('💬 Creating message with captured image in chat:', targetChat.title);
     const imageMessage = await window.electronAPI.saveMessage({
       chatId: targetChat.id,
       role: 'user',
@@ -104,12 +175,18 @@ const App: React.FC = () => {
     console.log('✅ Image message created:', imageMessage);
     
     // Update messages list
-    setMessages(prev => [...prev, imageMessage]);
+    const updatedMessages = [...messagesAtCapture, imageMessage];
+    setMessages(updatedMessages);
+    messagesRef.current = updatedMessages;
     
-    // Set flag to show move to new chat option (only if current chat has other messages)
-    if (messages.length > 0) {
-      console.log('🔄 Setting move to new chat option');
+    // Set flag to show move to new chat option (only if current chat had other messages before the screenshot)
+    const hadPreviousMessages = messagesAtCapture.length > 0;
+    if (hadPreviousMessages) {
+      console.log('🔄 Chat had previous messages, showing move to new chat option');
       setShowMoveToNewChatOption(true);
+    } else {
+      console.log('📝 Chat was empty, no move option needed');
+      setShowMoveToNewChatOption(false);
     }
     
     console.log('✅ Screen capture handled successfully');
@@ -123,33 +200,37 @@ const App: React.FC = () => {
     if (!lastMessage?.imagePath) return;
     
     try {
+      console.log('🔄 Moving screenshot to new chat...');
+      
       // Create a new screen capture chat
       const newChat = await createNewChat('Screen Capture Chat');
+      console.log('✅ Created new screen capture chat:', newChat.title);
       
-      // Move the screenshot message to the new chat
+      // Save the screenshot message to the new chat
       await window.electronAPI.saveMessage({
         chatId: newChat.id,
         role: 'user',
         content: lastMessage.content,
         imagePath: lastMessage.imagePath
       });
-      
-      // Remove the image message from current chat by deleting and reloading messages
-      // Note: We'll need to implement a delete message function if needed
+      console.log('✅ Screenshot message moved to new chat');
       
       // Switch to the new chat
       setCurrentChat(newChat);
       const newChatMessages = await window.electronAPI.getChatMessages(newChat.id);
       setMessages(newChatMessages);
       
-      // Reload chats to show the new one in the list
+      // Reload the original chat to remove the screenshot (reload from database)
+      const originalChatMessages = await window.electronAPI.getChatMessages(currentChat.id);
+      
+      // Update chats list to include the new chat
       const updatedChats = await window.electronAPI.getChats();
       setChats(updatedChats);
       
       // Hide the move option
       setShowMoveToNewChatOption(false);
       
-      console.log('✅ Moved screenshot to new chat:', newChat.title);
+      console.log('✅ Successfully moved screenshot to new chat:', newChat.title);
     } catch (error) {
       console.error('❌ Failed to move to new chat:', error);
     }
