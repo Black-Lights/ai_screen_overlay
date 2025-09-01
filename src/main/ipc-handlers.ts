@@ -2,6 +2,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { getDatabase } from './database';
 import axios from 'axios';
 import * as fs from 'fs';
+import * as path from 'path';
 
 // AI Service implementation for main process
 class MainAIService {
@@ -9,22 +10,91 @@ class MainAIService {
     text: string;
     image?: string;
     apiKey: string;
-  }): Promise<string> {
+    chatHistory?: any[];
+    modelId?: string;
+  }): Promise<{content: string, provider: string, model: string}> {
     switch (provider.toLowerCase()) {
       case 'openai':
-        return this.sendToOpenAI(params);
+        const openaiResponse = await this.sendToOpenAI(params);
+        return {
+          content: openaiResponse,
+          provider: 'OpenAI',
+          model: this.getModelDisplayName('openai', params.modelId || 'gpt-4o')
+        };
       case 'claude':
-        return this.sendToClaude(params);
+        const claudeResponse = await this.sendToClaude(params);
+        return {
+          content: claudeResponse,
+          provider: 'Claude',
+          model: this.getModelDisplayName('claude', params.modelId || 'claude-3-7-sonnet-20250219')
+        };
       case 'deepseek':
-        return this.sendToDeepSeek(params);
+        const deepseekResponse = await this.sendToDeepSeek(params);
+        return {
+          content: deepseekResponse,
+          provider: 'DeepSeek',
+          model: this.getModelDisplayName('deepseek', params.modelId || 'deepseek-chat')
+        };
       default:
         throw new Error(`Unsupported AI provider: ${provider}`);
     }
   }
 
-  private async sendToOpenAI(params: { text: string; image?: string; apiKey: string }): Promise<string> {
+  private getModelDisplayName(provider: string, modelId: string): string {
+    // Map API model IDs to display names
+    const modelMap: { [key: string]: { [key: string]: string } } = {
+      openai: {
+        'gpt-4o': 'GPT-4o',
+        'gpt-4o-mini': 'GPT-4o Mini',
+        'gpt-4-turbo': 'GPT-4 Turbo'
+      },
+      claude: {
+        'claude-3-7-sonnet-20250219': 'Claude Sonnet 3.7',
+        'claude-sonnet-4-20250514': 'Claude Sonnet 4',
+        'claude-opus-4-1-20250805': 'Claude Opus 4.1',
+        'claude-opus-4-20250514': 'Claude Opus 4',
+        'claude-3-5-haiku-20241022': 'Claude Haiku 3.5'
+      },
+      deepseek: {
+        'deepseek-chat': 'DeepSeek Chat',
+        'deepseek-reasoner': 'DeepSeek Reasoner'
+      }
+    };
+
+    return modelMap[provider]?.[modelId] || modelId;
+  }
+
+  private async sendToOpenAI(params: { text: string; image?: string; apiKey: string; chatHistory?: any[]; modelId?: string }): Promise<string> {
     try {
-      const messages: any[] = [{
+      console.log(`🤖 OpenAI request - Model: ${params.modelId || 'gpt-4o'}, Text preview: "${params.text.substring(0, 50)}..."`);
+      
+      const messages: any[] = [];
+      
+      // Add chat history context
+      if (params.chatHistory && params.chatHistory.length > 0) {
+        params.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            const content: any[] = [{ type: 'text', text: msg.content }];
+            if (msg.imagePath && fs.existsSync(msg.imagePath)) {
+              const imageBuffer = fs.readFileSync(msg.imagePath);
+              const imageBase64 = imageBuffer.toString('base64');
+              content.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } });
+            }
+            messages.push({
+              role: 'user',
+              content: content.length === 1 ? content[0].text : content
+            });
+          } else if (msg.role === 'assistant') {
+            messages.push({
+              role: 'assistant',
+              content: msg.content
+            });
+          }
+        });
+      }
+      
+      // Add current message
+      messages.push({
         role: 'user',
         content: params.image ? [
           { type: 'text', text: params.text },
@@ -36,16 +106,26 @@ class MainAIService {
             }
           }
         ] : params.text
-      }];
+      });
+
+      // Determine if we're using an o1 model (which uses different parameters)
+      const isO1Model = params.modelId?.includes('o1');
+      const requestBody: any = {
+        model: params.modelId || (params.image ? 'gpt-4o' : 'gpt-4o'),
+        messages
+      };
+
+      // o1 models use max_completion_tokens instead of max_tokens and don't support temperature
+      if (isO1Model) {
+        requestBody.max_completion_tokens = 1000;
+      } else {
+        requestBody.max_tokens = 1000;
+        requestBody.temperature = 0.7;
+      }
 
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
-        {
-          model: params.image ? 'gpt-4o' : 'gpt-4o',
-          messages,
-          max_tokens: 1000,
-          temperature: 0.7
-        },
+        requestBody,
         {
           headers: {
             'Authorization': `Bearer ${params.apiKey}`,
@@ -54,17 +134,50 @@ class MainAIService {
         }
       );
 
-      return response.data.choices[0]?.message?.content || 'No response from OpenAI';
+      const aiResponse = response.data.choices[0]?.message?.content || 'No response from OpenAI';
+      console.log(`🤖 OpenAI response preview: "${aiResponse.substring(0, 100)}..."`);
+      return aiResponse;
     } catch (error: any) {
       console.error('OpenAI API Error:', error);
       throw new Error(error.response?.data?.error?.message || 'Failed to communicate with OpenAI');
     }
   }
 
-  private async sendToClaude(params: { text: string; image?: string; apiKey: string }): Promise<string> {
+  private async sendToClaude(params: { text: string; image?: string; apiKey: string; chatHistory?: any[]; modelId?: string }): Promise<string> {
     try {
-      const content: any[] = [{ type: 'text', text: params.text }];
+      console.log(`🤖 Claude request - Model: ${params.modelId || 'claude-3-7-sonnet-20250219'}, Text preview: "${params.text.substring(0, 50)}..."`);
       
+      const messages: any[] = [];
+      
+      // Add chat history context
+      if (params.chatHistory && params.chatHistory.length > 0) {
+        params.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            const content: any[] = [{ type: 'text', text: msg.content }];
+            if (msg.imagePath && fs.existsSync(msg.imagePath)) {
+              const imageBuffer = fs.readFileSync(msg.imagePath);
+              const imageBase64 = imageBuffer.toString('base64');
+              content.unshift({
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/png',
+                  data: imageBase64
+                }
+              });
+            }
+            messages.push({ role: 'user', content });
+          } else if (msg.role === 'assistant') {
+            messages.push({
+              role: 'assistant',
+              content: [{ type: 'text', text: msg.content }]
+            });
+          }
+        });
+      }
+      
+      // Add current message
+      const content: any[] = [{ type: 'text', text: params.text }];
       if (params.image) {
         content.unshift({
           type: 'image',
@@ -75,16 +188,14 @@ class MainAIService {
           }
         });
       }
+      messages.push({ role: 'user', content });
 
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
-          model: 'claude-3-5-sonnet-20241022',
+          model: params.modelId || 'claude-3-7-sonnet-20250219',
           max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content
-          }]
+          messages
         },
         {
           headers: {
@@ -95,32 +206,55 @@ class MainAIService {
         }
       );
 
-      return response.data.content[0]?.text || 'No response from Claude';
+      const aiResponse = response.data.content[0]?.text || 'No response from Claude';
+      console.log(`🤖 Claude response preview: "${aiResponse.substring(0, 100)}..."`);
+      return aiResponse;
     } catch (error: any) {
       console.error('Claude API Error:', error);
       throw new Error(error.response?.data?.error?.message || 'Failed to communicate with Claude');
     }
   }
 
-  private async sendToDeepSeek(params: { text: string; image?: string; apiKey: string }): Promise<string> {
+  private async sendToDeepSeek(params: { text: string; image?: string; apiKey: string; chatHistory?: any[]; modelId?: string }): Promise<string> {
     try {
-      const messages: any[] = [{
-        role: 'user',
-        content: params.image ? [
-          { type: 'text', text: params.text },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/png;base64,${params.image}`
-            }
+      const messages: any[] = [];
+      
+      // Add chat history context
+      if (params.chatHistory && params.chatHistory.length > 0) {
+        params.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            // For DeepSeek, use simple text format for history
+            messages.push({
+              role: 'user',
+              content: msg.content
+            });
+          } else if (msg.role === 'assistant') {
+            messages.push({
+              role: 'assistant',
+              content: msg.content
+            });
           }
-        ] : params.text
-      }];
+        });
+      }
+      
+      // Add current message - DeepSeek uses different format for vision
+      if (params.image) {
+        // For now, disable image support for DeepSeek to avoid format errors
+        messages.push({
+          role: 'user',
+          content: params.text + " [Note: Image was provided but DeepSeek vision API format needs verification]"
+        });
+      } else {
+        messages.push({
+          role: 'user',
+          content: params.text
+        });
+      }
 
       const response = await axios.post(
         'https://api.deepseek.com/v1/chat/completions',
         {
-          model: params.image ? 'deepseek-vl-chat' : 'deepseek-chat',
+          model: params.modelId || 'deepseek-chat', // Use text model for now until vision format is resolved
           messages,
           max_tokens: 1000,
           temperature: 0.7
@@ -142,6 +276,132 @@ class MainAIService {
 }
 
 const aiService = new MainAIService();
+
+// API Key Testing Functions
+async function testOpenAIKey(keyStatus: any) {
+  if (!keyStatus.key) {
+    keyStatus.status = 'not_configured';
+    keyStatus.message = 'API key not configured';
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 1
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${keyStatus.key}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+    
+    keyStatus.status = 'ready';
+    keyStatus.message = 'API key working';
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      keyStatus.status = 'invalid';
+      keyStatus.message = 'Invalid API key';
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      keyStatus.status = 'server_down';
+      keyStatus.message = 'Cannot reach OpenAI servers';
+    } else {
+      keyStatus.status = 'error';
+      keyStatus.message = error.response?.data?.error?.message || 'Unknown error';
+    }
+  }
+}
+
+async function testClaudeKey(keyStatus: any) {
+  if (!keyStatus.key) {
+    keyStatus.status = 'not_configured';
+    keyStatus.message = 'API key not configured';
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      'https://api.anthropic.com/v1/messages',
+      {
+        model: 'claude-3-7-sonnet-20250219',
+        max_tokens: 1,
+        messages: [{ 
+          role: 'user', 
+          content: 'test'
+        }]
+      },
+      {
+        headers: {
+          'x-api-key': keyStatus.key,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01'
+        },
+        timeout: 10000
+      }
+    );
+    
+    keyStatus.status = 'ready';
+    keyStatus.message = 'API key working';
+  } catch (error: any) {
+    console.error('Claude API Test Error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      keyStatus.status = 'invalid';
+      keyStatus.message = 'Invalid API key';
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      keyStatus.status = 'server_down';
+      keyStatus.message = 'Cannot reach Claude servers';
+    } else {
+      keyStatus.status = 'error';
+      keyStatus.message = error.response?.data?.error?.message || 'Unknown error';
+    }
+  }
+}
+
+async function testDeepSeekKey(keyStatus: any) {
+  if (!keyStatus.key) {
+    keyStatus.status = 'not_configured';
+    keyStatus.message = 'API key not configured';
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      'https://api.deepseek.com/v1/chat/completions',
+      {
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 1
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${keyStatus.key}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+    
+    keyStatus.status = 'ready';
+    keyStatus.message = 'API key working';
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      keyStatus.status = 'invalid';
+      keyStatus.message = 'Invalid API key';
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      keyStatus.status = 'server_down';
+      keyStatus.message = 'Cannot reach DeepSeek servers';
+    } else {
+      keyStatus.status = 'error';
+      keyStatus.message = error.response?.data?.error?.message || 'Unknown error';
+    }
+  }
+}
 
 export function setupIpcHandlers(): void {
   console.log('🔄 setupIpcHandlers() called');
@@ -202,8 +462,12 @@ export function setupIpcHandlers(): void {
     imagePath?: string;
     provider: string;
     apiKey: string;
+    chatId?: number;
+    modelId?: string;
   }) => {
-    const { text, imagePath, provider, apiKey } = params;
+    const { text, imagePath, provider, apiKey, chatId, modelId } = params;
+    
+    console.log(`🔑 send-ai-message called with provider: ${provider}, apiKey starts with: ${apiKey.substring(0, 10)}...`);
     
     try {
       let imageData = '';
@@ -212,13 +476,22 @@ export function setupIpcHandlers(): void {
         imageData = imageBuffer.toString('base64');
       }
 
+      // Get chat history if chatId is provided
+      let chatHistory: any[] = [];
+      if (chatId) {
+        const db = getDatabase();
+        chatHistory = db.getChatMessages(chatId);
+      }
+
       const response = await aiService.sendMessage(provider, {
         text,
         image: imageData,
-        apiKey
+        apiKey,
+        chatHistory,
+        modelId
       });
 
-      return response;
+      return response; // Now returns {content, provider, model}
     } catch (error: any) {
       console.error('AI message failed:', error);
       throw error;
@@ -273,6 +546,88 @@ export function setupIpcHandlers(): void {
 
   ipcMain.on('selection-cancel', (event: any) => {
     event.reply('selection-result', null);
+  });
+
+  // API Key Management
+  ipcMain.handle('get-api-keys-status', async () => {
+    const db = getDatabase();
+    const settings = db.getSettings();
+    
+    const keyStatus = {
+      openai: { key: '', status: 'not_configured', message: '' },
+      claude: { key: '', status: 'not_configured', message: '' },
+      deepseek: { key: '', status: 'not_configured', message: '' }
+    };
+
+    // Read current keys from database first, then fallback to .env
+    if (settings.openaiApiKey && settings.openaiApiKey !== 'your_openai_api_key_here') {
+      keyStatus.openai.key = settings.openaiApiKey;
+    }
+    if (settings.claudeApiKey && settings.claudeApiKey !== 'your_claude_api_key_here') {
+      keyStatus.claude.key = settings.claudeApiKey;
+    }
+    if (settings.deepseekApiKey && settings.deepseekApiKey !== 'your_deepseek_api_key_here') {
+      keyStatus.deepseek.key = settings.deepseekApiKey;
+    }
+
+    console.log('🔍 API Key Status Check:');
+    console.log('OpenAI key exists:', !!keyStatus.openai.key);
+    console.log('Claude key exists:', !!keyStatus.claude.key);
+    console.log('DeepSeek key exists:', !!keyStatus.deepseek.key);
+
+    // Test each API key
+    await Promise.all([
+      testOpenAIKey(keyStatus.openai),
+      testClaudeKey(keyStatus.claude),
+      testDeepSeekKey(keyStatus.deepseek)
+    ]);
+
+    // Map internal status format to expected format
+    const mapStatus = (status: string): 'ready' | 'invalid' | 'error' | 'not-configured' => {
+      switch (status) {
+        case 'ready': return 'ready';
+        case 'invalid': return 'invalid';
+        case 'server_down': 
+        case 'error': return 'error';
+        case 'not_configured':
+        default: return 'not-configured';
+      }
+    };
+
+    return {
+      openai: mapStatus(keyStatus.openai.status),
+      claude: mapStatus(keyStatus.claude.status),
+      deepseek: mapStatus(keyStatus.deepseek.status)
+    };
+  });
+
+  ipcMain.handle('save-api-key', async (_event: any, { provider, key }: { provider: string, key: string }) => {
+    const envPath = path.join(process.cwd(), '.env');
+    let envContent = '';
+
+    // Read existing .env file
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+
+    const envVarName = `${provider.toUpperCase()}_API_KEY`;
+    const regex = new RegExp(`^${envVarName}=.*$`, 'm');
+    
+    if (regex.test(envContent)) {
+      // Replace existing key
+      envContent = envContent.replace(regex, `${envVarName}=${key}`);
+    } else {
+      // Add new key
+      envContent += `\n${envVarName}=${key}`;
+    }
+
+    // Write back to .env file
+    fs.writeFileSync(envPath, envContent);
+    
+    // Update process.env
+    process.env[envVarName] = key;
+
+    return true;
   });
 
   console.log('✅ setupIpcHandlers() completed successfully');

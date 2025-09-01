@@ -1,5 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppSettings } from '@/shared/types';
+import { ModelSelector } from './ModelSelector';
+import { DEFAULT_MODELS } from '@/shared/models';
+
+interface ApiStatus {
+  openai: 'ready' | 'invalid' | 'error' | 'not-configured';
+  claude: 'ready' | 'invalid' | 'error' | 'not-configured';
+  deepseek: 'ready' | 'invalid' | 'error' | 'not-configured';
+}
 
 interface LLMSelectorProps {
   selectedProvider: string;
@@ -14,22 +22,86 @@ const LLMSelector: React.FC<LLMSelectorProps> = ({
   onProviderChange,
   onSettingsChange,
 }) => {
+  const [apiStatus, setApiStatus] = useState<ApiStatus>({
+    openai: 'not-configured',
+    claude: 'not-configured',
+    deepseek: 'not-configured',
+  });
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
   const providers = [
-    { id: 'openai', name: 'OpenAI GPT-4V', color: 'text-green-400' },
-    { id: 'claude', name: 'Claude 3.5 Sonnet', color: 'text-orange-400' },
+    { id: 'openai', name: 'OpenAI', color: 'text-green-400' },
+    { id: 'claude', name: 'Anthropic', color: 'text-orange-400' },
     { id: 'deepseek', name: 'DeepSeek', color: 'text-purple-400' },
   ];
 
+  // Check API status on component mount and when settings change
+  useEffect(() => {
+    checkApiStatus();
+  }, [settings.openaiApiKey, settings.claudeApiKey, settings.deepseekApiKey]);
+
+  const checkApiStatus = async () => {
+    setIsCheckingStatus(true);
+    try {
+      const status = await window.electronAPI.getApiKeysStatus();
+      setApiStatus(status);
+    } catch (error) {
+      console.error('Failed to check API status:', error);
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  };
+
   const getProviderStatus = (providerId: string) => {
-    switch (providerId) {
-      case 'openai':
-        return !!settings.openaiApiKey;
-      case 'claude':
-        return !!settings.claudeApiKey;
-      case 'deepseek':
-        return !!settings.deepseekApiKey;
+    const status = apiStatus[providerId as keyof ApiStatus];
+    return status === 'ready';
+  };
+
+  const getStatusColor = (providerId: string): string => {
+    const status = apiStatus[providerId as keyof ApiStatus];
+    switch (status) {
+      case 'ready':
+        return 'bg-green-400';
+      case 'invalid':
+        return 'bg-red-400';
+      case 'error':
+        return 'bg-yellow-400';
+      case 'not-configured':
+        return 'bg-gray-400';
       default:
-        return false;
+        return 'bg-gray-400';
+    }
+  };
+
+  const getStatusText = (providerId: string): string => {
+    const status = apiStatus[providerId as keyof ApiStatus];
+    switch (status) {
+      case 'ready':
+        return 'Ready';
+      case 'invalid':
+        return 'Invalid key';
+      case 'error':
+        return 'Server error';
+      case 'not-configured':
+        return 'API key required';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const getOverallStatusText = (): string => {
+    const status = apiStatus[selectedProvider as keyof ApiStatus];
+    switch (status) {
+      case 'ready':
+        return 'Connected';
+      case 'invalid':
+        return 'Invalid API Key';
+      case 'error':
+        return 'Server Issue';
+      case 'not-configured':
+        return 'No API Key';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -39,14 +111,33 @@ const LLMSelector: React.FC<LLMSelectorProps> = ({
     }
   };
 
+  const handleModelChange = (providerId: string, modelId: string) => {
+    const updatedSelectedModels = {
+      ...settings.selectedModels,
+      [providerId]: modelId
+    };
+    
+    onSettingsChange({
+      selectedModels: updatedSelectedModels
+    });
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-white text-sm font-medium">AI Provider</label>
-        <div className="flex items-center space-x-1">
-          <div className={`w-2 h-2 rounded-full ${getProviderStatus(selectedProvider) ? 'bg-green-400' : 'bg-red-400'}`}></div>
+        <label className="text-white text-sm font-medium">LLM Provider</label>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={checkApiStatus}
+            disabled={isCheckingStatus}
+            className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50"
+            title="Refresh API status"
+          >
+            {isCheckingStatus ? 'Checking...' : 'Refresh'}
+          </button>
+          <div className={`w-2 h-2 rounded-full ${getStatusColor(selectedProvider)}`}></div>
           <span className="text-xs text-white/70">
-            {getProviderStatus(selectedProvider) ? 'Connected' : 'No API Key'}
+            {getOverallStatusText()}
           </span>
         </div>
       </div>
@@ -62,28 +153,26 @@ const LLMSelector: React.FC<LLMSelectorProps> = ({
               onClick={() => handleProviderSelect(provider.id)}
               disabled={!isConfigured}
               className={`
-                p-3 rounded-lg border transition-all duration-200 text-left
+                p-3 rounded-lg border transition-all duration-200 text-left backdrop-filter backdrop-blur-lg
                 ${isSelected && isConfigured
-                  ? 'bg-white/20 border-blue-400 backdrop-blur-md'
-                  : 'bg-white/10 border-white/20 hover:bg-white/15'
+                  ? 'bg-black/50 border-blue-400'
+                  : 'bg-black/30 border-white/30 hover:bg-black/40'
                 }
                 ${!isConfigured ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               `}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className={`font-medium ${provider.color}`}>
+                  <div className={`font-medium ${provider.color}`} style={{textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)'}}>
                     {provider.name}
                   </div>
-                  <div className="text-xs text-white/60 mt-1">
-                    {isConfigured ? 'Ready' : 'API key required'}
+                  <div className="text-xs text-white/90 mt-1" style={{textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)'}}>
+                    {getStatusText(provider.id)}
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  {isConfigured && (
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  )}
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(provider.id)}`}></div>
                   {isSelected && isConfigured && (
                     <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -91,13 +180,22 @@ const LLMSelector: React.FC<LLMSelectorProps> = ({
                   )}
                 </div>
               </div>
+              
+              {isSelected && isConfigured && (
+                <ModelSelector
+                  provider={provider.id as 'openai' | 'claude' | 'deepseek'}
+                  selectedModel={settings.selectedModels?.[provider.id] || DEFAULT_MODELS[provider.id as keyof typeof DEFAULT_MODELS]}
+                  onModelChange={(modelId) => handleModelChange(provider.id, modelId)}
+                  disabled={!isConfigured}
+                />
+              )}
             </button>
           );
         })}
       </div>
 
       {!getProviderStatus(selectedProvider) && (
-        <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <div className="mt-3 p-3 bg-yellow-600/30 border border-yellow-400/40 rounded-lg backdrop-blur-sm">
           <div className="flex items-start space-x-2">
             <svg className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />

@@ -49,7 +49,9 @@ export class StorageService {
     imagePath?: string;
     provider: string;
     apiKey: string;
-  }): Promise<string> {
+    chatId?: number;
+    modelId?: string;
+  }): Promise<{content: string, provider: string, model: string}> {
     return window.electronAPI.sendAIMessage(params);
   }
 

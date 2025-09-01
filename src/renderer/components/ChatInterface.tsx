@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Chat, Message } from '@/shared/types';
+import { AVAILABLE_MODELS } from '@/shared/models';
 
 interface ChatInterfaceProps {
   currentChat: Chat | null;
@@ -69,14 +73,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setCurrentImage(null);
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
   const formatMessage = (content: string) => {
-    // Simple formatting for line breaks
-    return content.split('\n').map((line, index) => (
-      <React.Fragment key={index}>
-        {line}
-        {index < content.split('\n').length - 1 && <br />}
-      </React.Fragment>
-    ));
+    return (
+      <div className="markdown-content">
+        <ReactMarkdown
+          components={{
+            code({ node, className, children, ...props }: any) {
+              const match = /language-(\w+)/.exec(className || '');
+              return match ? (
+                <SyntaxHighlighter
+                  style={oneDark as any}
+                  language={match[1]}
+                  PreTag="div"
+                  {...props}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              ) : (
+                <code className={`${className} bg-black/50 px-1 py-0.5 rounded text-sm`} {...props}>
+                  {children}
+                </code>
+              );
+            },
+            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+            ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+            li: ({ children }) => <li className="mb-1">{children}</li>,
+            h1: ({ children }) => <h1 className="text-xl font-bold mb-2">{children}</h1>,
+            h2: ({ children }) => <h2 className="text-lg font-bold mb-2">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-base font-bold mb-1">{children}</h3>,
+            blockquote: ({ children }) => (
+              <blockquote className="border-l-4 border-white/30 pl-3 italic mb-2">
+                {children}
+              </blockquote>
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    );
   };
 
   const getProviderColor = (provider: string) => {
@@ -92,17 +137,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const getModelDisplayName = (provider: string, model: string) => {
+    if (!model || !provider) return '';
+    
+    const providerModels = AVAILABLE_MODELS[provider as keyof typeof AVAILABLE_MODELS];
+    if (!providerModels) return model;
+    
+    const modelInfo = providerModels.find(m => m.id === model);
+    return modelInfo ? modelInfo.name : model;
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-white/60">
+            <div className="text-center text-white/90" style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>
               <div className="text-4xl mb-4">💬</div>
               <p className="text-lg font-medium mb-2">Start a conversation</p>
               <p className="text-sm">
-                Press <kbd className="px-2 py-1 bg-white/20 rounded">Ctrl+Shift+S</kbd> to capture your screen
+                Press <kbd className="px-2 py-1 bg-black/50 rounded border border-white/30">Ctrl+Shift+S</kbd> to capture your screen
               </p>
             </div>
           </div>
@@ -113,38 +168,62 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[75%] px-4 py-2 rounded-lg animate-slide-up break-words ${
+                className={`max-w-[85%] px-4 py-3 rounded-lg animate-slide-up break-words relative group ${
                   message.role === 'user'
                     ? 'bg-blue-500 text-white'
-                    : 'bg-white/90 text-gray-800 backdrop-blur-sm'
+                    : 'bg-black/80 text-white backdrop-blur-sm border border-white/20'
                 }`}
               >
+                {/* Copy button */}
+                <button
+                  onClick={() => copyToClipboard(message.content)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-white/20 hover:bg-white/30"
+                  title="Copy message"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v6h2V5h8v6h2V5a2 2 0 00-2-2H6zM4 9a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2H4z" />
+                  </svg>
+                </button>
+
                 {/* Show image if present */}
                 {message.imagePath && (
-                  <div className="mb-2">
+                  <div className="mb-3">
                     <img
                       src={`file://${message.imagePath}`}
                       alt="Captured screen"
                       className="max-w-full h-auto rounded border"
-                      style={{ maxHeight: '150px' }}
+                      style={{ maxHeight: '200px' }}
                     />
                   </div>
                 )}
                 
-                <div className="text-sm whitespace-pre-wrap">
+                <div className="text-sm select-text">
                   {formatMessage(message.content)}
                 </div>
 
-                {/* Show provider for AI messages */}
+                {/* Show provider and model for AI messages */}
                 {message.role === 'assistant' && message.provider && (
-                  <div className="mt-2 pt-2 border-t border-gray-200">
-                    <span className={`text-xs font-medium ${getProviderColor(message.provider)}`}>
-                      {message.provider.toUpperCase()}
-                    </span>
+                  <div className="mt-3 pt-2 border-t border-white/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xs font-medium ${getProviderColor(message.provider)}`}>
+                          {message.provider.toUpperCase()}
+                        </span>
+                        {message.model && (
+                          <>
+                            <span className="text-white/60 text-xs">•</span>
+                            <span className="text-xs text-white/80">
+                              {getModelDisplayName(message.provider, message.model)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                <div className="text-xs opacity-60 mt-1">
+                <div className="text-xs opacity-60 mt-2">
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </div>
               </div>
