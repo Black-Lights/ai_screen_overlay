@@ -42,6 +42,7 @@ const Overlay: React.FC<OverlayProps> = ({
   const [size, setSize] = useState(settings.overlaySize);
   const [showSettings, setShowSettings] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showLLMSelector, setShowLLMSelector] = useState(false);
   const [apiStatus, setApiStatus] = useState<{
     openai: 'ready' | 'invalid' | 'error' | 'not-configured';
     claude: 'ready' | 'invalid' | 'error' | 'not-configured';
@@ -66,6 +67,11 @@ const Overlay: React.FC<OverlayProps> = ({
       setSize({ width: rect.width || 500, height: rect.height || 700 });
     }
   }, [settings.overlayPosition, settings.overlaySize]);
+
+  // Check API status initially and when settings change
+  useEffect(() => {
+    checkApiStatus();
+  }, []);
 
   // Check API status when settings change
   useEffect(() => {
@@ -276,14 +282,65 @@ const Overlay: React.FC<OverlayProps> = ({
 
       {/* Content Area */}
       <div className="overlay-content flex-1 min-h-0">
-        {/* LLM Selector */}
-        <div className="overlay-section p-3 border-b border-white/10">
-          <LLMSelector
-            selectedProvider={settings.selectedProvider}
-            settings={settings}
-            onProviderChange={(provider) => onUpdateSettings({ selectedProvider: provider })}
-            onSettingsChange={handleSettingsChange}
-          />
+        {/* LLM Selector - Collapsible */}
+        <div className="overlay-section border-b border-white/10">
+          {!showLLMSelector ? (
+            // Collapsed view - just show provider name and click to expand
+            <div 
+              className="p-3 cursor-pointer hover:bg-white/5 transition-colors bg-black/20 backdrop-blur-sm"
+              onClick={() => setShowLLMSelector(true)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-white/90">
+                    LLM Provider
+                  </span>
+                  <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">
+                    {settings.selectedProvider === 'openai' ? 'OpenAI' : 
+                     settings.selectedProvider === 'claude' ? 'Anthropic' : 'DeepSeek'}
+                  </span>
+                </div>
+                <button className="text-white/40 hover:text-white/60 transition-colors bg-white/10 backdrop-blur-sm p-1 rounded">
+                  <svg className="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Expanded view - full LLM selector with close button
+            <div className="bg-black/20 backdrop-blur-sm">
+              <div className="p-3 border-b border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-white/90">LLM Provider</span>
+                  <button 
+                    className="text-white/40 hover:text-white/60 transition-colors bg-white/10 backdrop-blur-sm p-1 rounded"
+                    onClick={() => setShowLLMSelector(false)}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <LLMSelector
+                selectedProvider={settings.selectedProvider}
+                settings={settings}
+                apiStatus={apiStatus}
+                isCheckingStatus={isCheckingApiStatus}
+                onProviderChange={(provider) => {
+                  onUpdateSettings({ selectedProvider: provider });
+                  // Don't auto-collapse, let user select model first
+                }}
+                onSettingsChange={handleSettingsChange}
+                onModelChange={(model) => {
+                  // Auto-collapse after model selection
+                  setShowLLMSelector(false);
+                }}
+                onRefreshStatus={checkApiStatus}
+              />
+            </div>
+          )}
         </div>
 
         {/* Chat Interface */}

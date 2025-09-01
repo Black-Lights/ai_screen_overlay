@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AppSettings } from '@/shared/types';
 import { ModelSelector } from './ModelSelector';
 import { DEFAULT_MODELS } from '@/shared/models';
@@ -12,45 +12,30 @@ interface ApiStatus {
 interface LLMSelectorProps {
   selectedProvider: string;
   settings: AppSettings;
+  apiStatus: ApiStatus;
+  isCheckingStatus: boolean;
   onProviderChange: (provider: string) => void;
   onSettingsChange: (settings: Partial<AppSettings>) => void;
+  onModelChange?: (model: string) => void;
+  onRefreshStatus?: () => void;
 }
 
 const LLMSelector: React.FC<LLMSelectorProps> = ({
   selectedProvider,
   settings,
+  apiStatus,
+  isCheckingStatus,
   onProviderChange,
   onSettingsChange,
+  onModelChange,
+  onRefreshStatus,
 }) => {
-  const [apiStatus, setApiStatus] = useState<ApiStatus>({
-    openai: 'not-configured',
-    claude: 'not-configured',
-    deepseek: 'not-configured',
-  });
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-
+  // Remove local API status state - use props instead
   const providers = [
     { id: 'openai', name: 'OpenAI', color: 'text-green-400' },
     { id: 'claude', name: 'Anthropic', color: 'text-orange-400' },
     { id: 'deepseek', name: 'DeepSeek', color: 'text-purple-400' },
   ];
-
-  // Check API status on component mount and when settings change
-  useEffect(() => {
-    checkApiStatus();
-  }, [settings.openaiApiKey, settings.claudeApiKey, settings.deepseekApiKey]);
-
-  const checkApiStatus = async () => {
-    setIsCheckingStatus(true);
-    try {
-      const status = await window.electronAPI.getApiKeysStatus();
-      setApiStatus(status);
-    } catch (error) {
-      console.error('Failed to check API status:', error);
-    } finally {
-      setIsCheckingStatus(false);
-    }
-  };
 
   const getProviderStatus = (providerId: string) => {
     const status = apiStatus[providerId as keyof ApiStatus];
@@ -108,10 +93,12 @@ const LLMSelector: React.FC<LLMSelectorProps> = ({
   const handleProviderSelect = (providerId: string) => {
     if (getProviderStatus(providerId)) {
       onProviderChange(providerId);
+      // Don't auto-collapse on provider change, let user select model
     }
   };
 
-  const handleModelChange = (providerId: string, modelId: string) => {
+    const handleModelChange = (providerId: string, modelId: string) => {
+    console.log(`🔄 Model changed for ${providerId}: ${modelId}`);
     const updatedSelectedModels = {
       ...settings.selectedModels,
       [providerId]: modelId
@@ -120,17 +107,22 @@ const LLMSelector: React.FC<LLMSelectorProps> = ({
     onSettingsChange({
       selectedModels: updatedSelectedModels
     });
+
+    // Call the model change callback to trigger collapse
+    if (onModelChange) {
+      onModelChange(modelId);
+    }
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 p-3">
       <div className="flex items-center justify-between">
-        <label className="text-white text-sm font-medium">LLM Provider</label>
+        <span className="text-white/70 text-xs">Select Provider & Model</span>
         <div className="flex items-center space-x-2">
           <button
-            onClick={checkApiStatus}
+            onClick={onRefreshStatus || (() => {})}
             disabled={isCheckingStatus}
-            className="text-xs text-white/70 hover:text-white transition-colors px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50"
+            className="text-xs text-white/90 hover:text-white transition-colors px-2 py-1 rounded-lg bg-black/40 backdrop-blur-sm hover:bg-black/60 disabled:opacity-50"
             title="Refresh API status"
           >
             {isCheckingStatus ? 'Checking...' : 'Refresh'}
