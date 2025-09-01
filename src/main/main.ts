@@ -91,30 +91,6 @@ class Application {
       console.log('👁️ Window ready to show');
       this.mainWindow?.show();
       this.mainWindow?.focus();
-      
-      // Auto-test screen capture after 5 seconds for debugging
-      setTimeout(() => {
-        console.log('🧪 Auto-triggering test screen capture for React debugging...');
-        this.screenCaptureService.startCapture()
-          .then((captureResult) => {
-            if (captureResult && this.mainWindow) {
-              console.log('📸 Auto-test capture completed:', captureResult.imagePath);
-              console.log('📤 Sending test screen-capture-complete event to renderer');
-              this.mainWindow.webContents.send('screen-capture-complete', {
-                imagePath: captureResult.imagePath,
-                bounds: captureResult.bounds
-              });
-              console.log('🪟 Main window shown and focused');
-              this.mainWindow.show();
-              this.mainWindow.focus();
-            } else {
-              console.log('❌ Auto-test screen capture returned null (canceled or failed)');
-            }
-          })
-          .catch((error: Error) => {
-            console.error('❌ Auto-test screen capture failed with error:', error);
-          });
-      }, 5000);
     });
 
     this.mainWindow.on('closed', () => {
