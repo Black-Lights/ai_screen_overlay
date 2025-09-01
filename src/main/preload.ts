@@ -60,6 +60,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: (): Promise<void> => 
     ipcRenderer.invoke('close-window'),
   
+  moveWindow: (x: number, y: number): Promise<void> => 
+    ipcRenderer.invoke('move-window', x, y),
+  
+  resizeWindow: (width: number, height: number): Promise<void> => 
+    ipcRenderer.invoke('resize-window', width, height),
+  
   toggleWindow: (): Promise<void> => 
     ipcRenderer.invoke('toggle-window'),
 

@@ -28,7 +28,8 @@
   },
   "include": [
     "**/*",
-    "../shared/**/*"
+    "../shared/**/*",
+    "../types/**/*"
   ],
   "exclude": [
     "../../node_modules",

@@ -73,19 +73,9 @@ const Overlay: React.FC<OverlayProps> = ({
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
       
-      // Get screen dimensions
-      const screenWidth = window.screen.width;
-      const screenHeight = window.screen.height;
-      const overlayWidth = size.width;
-      const overlayHeight = size.height;
-      
-      // Constrain position to keep overlay visible
-      const constrainedPosition = {
-        x: Math.max(0, Math.min(screenWidth - overlayWidth, newX)),
-        y: Math.max(0, Math.min(screenHeight - overlayHeight, newY)),
-      };
-      
-      setPosition(constrainedPosition);
+      // Move the actual Electron window instead of CSS positioning
+      window.electronAPI.moveWindow(newX, newY);
+      setPosition({ x: newX, y: newY });
     } else if (isResizing) {
       const deltaX = e.clientX - resizeStart.x;
       const deltaY = e.clientY - resizeStart.y;
@@ -93,6 +83,8 @@ const Overlay: React.FC<OverlayProps> = ({
       const newWidth = Math.max(280, Math.min(1000, resizeStart.width + deltaX));
       const newHeight = Math.max(300, Math.min(1400, resizeStart.height + deltaY));
       
+      // Resize the actual Electron window
+      window.electronAPI.resizeWindow(newWidth, newHeight);
       setSize({ width: newWidth, height: newHeight });
     }
   };
@@ -133,19 +125,11 @@ const Overlay: React.FC<OverlayProps> = ({
   return (
     <div
       ref={overlayRef}
-      className={`fixed glass-panel animate-fade-in select-none flex flex-col overflow-hidden ${
+      className={`glass-panel animate-fade-in select-none flex flex-col overflow-hidden h-full w-full ${
         isDragging ? 'is-dragging' : ''
       } ${isResizing ? 'is-resizing' : ''}`}
       style={{
-        left: position.x,
-        top: position.y,
-        width: size.width,
-        height: size.height,
         background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
-        minWidth: '280px',
-        minHeight: '300px',
-        maxWidth: '1000px',
-        maxHeight: '1400px',
       }}
       onMouseDown={handleMouseDown}
     >

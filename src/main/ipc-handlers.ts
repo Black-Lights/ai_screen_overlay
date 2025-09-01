@@ -240,6 +240,20 @@ export function setupIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle('move-window', async (event: any, x: number, y: number) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window) {
+      window.setPosition(x, y);
+    }
+  });
+
+  ipcMain.handle('resize-window', async (event: any, width: number, height: number) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window) {
+      window.setSize(width, height);
+    }
+  });
+
   ipcMain.handle('toggle-window', async (event: any) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (window) {
