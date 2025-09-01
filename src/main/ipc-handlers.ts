@@ -13,29 +13,44 @@ class MainAIService {
     chatHistory?: any[];
     modelId?: string;
   }): Promise<{content: string, provider: string, model: string}> {
+    console.log(`🔀 sendMessage called - Provider: ${provider}, Model: ${params.modelId}, Text: "${params.text.substring(0, 50)}..."`);
+    
     switch (provider.toLowerCase()) {
       case 'openai':
+        console.log(`🟢 Routing to OpenAI with model: ${params.modelId || 'gpt-4o'}`);
         const openaiResponse = await this.sendToOpenAI(params);
-        return {
+        const openaiResult = {
           content: openaiResponse,
           provider: 'OpenAI',
           model: this.getModelDisplayName('openai', params.modelId || 'gpt-4o')
         };
+        console.log(`✅ OpenAI result - Provider: ${openaiResult.provider}, Model: ${openaiResult.model}, Content preview: "${openaiResult.content.substring(0, 50)}..."`);
+        return openaiResult;
+        
       case 'claude':
+        console.log(`🟠 Routing to Claude with model: ${params.modelId || 'claude-3-7-sonnet-20250219'}`);
         const claudeResponse = await this.sendToClaude(params);
-        return {
+        const claudeResult = {
           content: claudeResponse,
           provider: 'Claude',
           model: this.getModelDisplayName('claude', params.modelId || 'claude-3-7-sonnet-20250219')
         };
+        console.log(`✅ Claude result - Provider: ${claudeResult.provider}, Model: ${claudeResult.model}, Content preview: "${claudeResult.content.substring(0, 50)}..."`);
+        return claudeResult;
+        
       case 'deepseek':
+        console.log(`🟣 Routing to DeepSeek with model: ${params.modelId || 'deepseek-chat'}`);
         const deepseekResponse = await this.sendToDeepSeek(params);
-        return {
+        const deepseekResult = {
           content: deepseekResponse,
           provider: 'DeepSeek',
           model: this.getModelDisplayName('deepseek', params.modelId || 'deepseek-chat')
         };
+        console.log(`✅ DeepSeek result - Provider: ${deepseekResult.provider}, Model: ${deepseekResult.model}, Content preview: "${deepseekResult.content.substring(0, 50)}..."`);
+        return deepseekResult;
+        
       default:
+        console.error(`❌ Unsupported AI provider: ${provider}`);
         throw new Error(`Unsupported AI provider: ${provider}`);
     }
   }
@@ -69,6 +84,12 @@ class MainAIService {
       console.log(`🤖 OpenAI request - Model: ${params.modelId || 'gpt-4o'}, Text preview: "${params.text.substring(0, 50)}..."`);
       
       const messages: any[] = [];
+      
+      // Add system message to clarify identity
+      messages.push({
+        role: 'system',
+        content: 'You are GPT-4, ChatGPT, or another OpenAI language model. You were created by OpenAI, NOT by Anthropic. You are NOT Claude. When asked who you are, always respond that you are an AI assistant made by OpenAI. Never claim to be Claude or any other AI assistant from another company. This is very important - you must identify yourself correctly as an OpenAI model.'
+      });
       
       // Add chat history context
       if (params.chatHistory && params.chatHistory.length > 0) {
@@ -123,6 +144,10 @@ class MainAIService {
         requestBody.temperature = 0.7;
       }
 
+      console.log(`🔍 OpenAI Request Body:`, JSON.stringify(requestBody, null, 2));
+      console.log(`🌐 Making request to: https://api.openai.com/v1/chat/completions`);
+      console.log(`🔑 Using API key: ${params.apiKey.substring(0, 15)}...`);
+
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         requestBody,
@@ -133,6 +158,8 @@ class MainAIService {
           }
         }
       );
+
+      console.log(`🔍 OpenAI Full Response:`, JSON.stringify(response.data, null, 2));
 
       const aiResponse = response.data.choices[0]?.message?.content || 'No response from OpenAI';
       console.log(`🤖 OpenAI response preview: "${aiResponse.substring(0, 100)}..."`);
@@ -195,7 +222,8 @@ class MainAIService {
         {
           model: params.modelId || 'claude-3-7-sonnet-20250219',
           max_tokens: 1000,
-          messages
+          messages,
+          system: 'You are Claude, an AI assistant made by Anthropic. Please identify yourself correctly as Claude when asked.'
         },
         {
           headers: {
@@ -217,7 +245,15 @@ class MainAIService {
 
   private async sendToDeepSeek(params: { text: string; image?: string; apiKey: string; chatHistory?: any[]; modelId?: string }): Promise<string> {
     try {
+      console.log(`🤖 DeepSeek request - Model: ${params.modelId || 'deepseek-chat'}, Text preview: "${params.text.substring(0, 50)}..."`);
+      
       const messages: any[] = [];
+      
+      // Add system message to clarify identity
+      messages.push({
+        role: 'system',
+        content: 'You are DeepSeek, an AI assistant made by DeepSeek AI. You are NOT Claude or ChatGPT. Please respond as DeepSeek and identify yourself correctly.'
+      });
       
       // Add chat history context
       if (params.chatHistory && params.chatHistory.length > 0) {
@@ -267,7 +303,9 @@ class MainAIService {
         }
       );
 
-      return response.data.choices[0]?.message?.content || 'No response from DeepSeek';
+      const aiResponse = response.data.choices[0]?.message?.content || 'No response from DeepSeek';
+      console.log(`🤖 DeepSeek response preview: "${aiResponse.substring(0, 100)}..."`);
+      return aiResponse;
     } catch (error: any) {
       console.error('DeepSeek API Error:', error);
       throw new Error(error.response?.data?.error?.message || 'Failed to communicate with DeepSeek');
