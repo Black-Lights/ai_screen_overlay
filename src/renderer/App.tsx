@@ -21,6 +21,7 @@ declare global {
         imagePath?: string;
         provider: string;
         apiKey: string;
+        chatId?: number;
       }) => Promise<string>;
       minimizeWindow: () => Promise<void>;
       closeWindow: () => Promise<void>;
@@ -187,7 +188,8 @@ const App: React.FC = () => {
         text,
         imagePath,
         provider: settings.selectedProvider,
-        apiKey
+        apiKey,
+        chatId: currentChat.id
       });
 
       // Save AI response

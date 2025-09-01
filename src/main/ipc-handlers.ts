@@ -9,6 +9,7 @@ class MainAIService {
     text: string;
     image?: string;
     apiKey: string;
+    chatHistory?: any[];
   }): Promise<string> {
     switch (provider.toLowerCase()) {
       case 'openai':
@@ -22,9 +23,35 @@ class MainAIService {
     }
   }
 
-  private async sendToOpenAI(params: { text: string; image?: string; apiKey: string }): Promise<string> {
+  private async sendToOpenAI(params: { text: string; image?: string; apiKey: string; chatHistory?: any[] }): Promise<string> {
     try {
-      const messages: any[] = [{
+      const messages: any[] = [];
+      
+      // Add chat history context
+      if (params.chatHistory && params.chatHistory.length > 0) {
+        params.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            const content: any[] = [{ type: 'text', text: msg.content }];
+            if (msg.imagePath && fs.existsSync(msg.imagePath)) {
+              const imageBuffer = fs.readFileSync(msg.imagePath);
+              const imageBase64 = imageBuffer.toString('base64');
+              content.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } });
+            }
+            messages.push({
+              role: 'user',
+              content: content.length === 1 ? content[0].text : content
+            });
+          } else if (msg.role === 'assistant') {
+            messages.push({
+              role: 'assistant',
+              content: msg.content
+            });
+          }
+        });
+      }
+      
+      // Add current message
+      messages.push({
         role: 'user',
         content: params.image ? [
           { type: 'text', text: params.text },
@@ -36,7 +63,7 @@ class MainAIService {
             }
           }
         ] : params.text
-      }];
+      });
 
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
@@ -61,10 +88,39 @@ class MainAIService {
     }
   }
 
-  private async sendToClaude(params: { text: string; image?: string; apiKey: string }): Promise<string> {
+  private async sendToClaude(params: { text: string; image?: string; apiKey: string; chatHistory?: any[] }): Promise<string> {
     try {
-      const content: any[] = [{ type: 'text', text: params.text }];
+      const messages: any[] = [];
       
+      // Add chat history context
+      if (params.chatHistory && params.chatHistory.length > 0) {
+        params.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            const content: any[] = [{ type: 'text', text: msg.content }];
+            if (msg.imagePath && fs.existsSync(msg.imagePath)) {
+              const imageBuffer = fs.readFileSync(msg.imagePath);
+              const imageBase64 = imageBuffer.toString('base64');
+              content.unshift({
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/png',
+                  data: imageBase64
+                }
+              });
+            }
+            messages.push({ role: 'user', content });
+          } else if (msg.role === 'assistant') {
+            messages.push({
+              role: 'assistant',
+              content: [{ type: 'text', text: msg.content }]
+            });
+          }
+        });
+      }
+      
+      // Add current message
+      const content: any[] = [{ type: 'text', text: params.text }];
       if (params.image) {
         content.unshift({
           type: 'image',
@@ -75,16 +131,14 @@ class MainAIService {
           }
         });
       }
+      messages.push({ role: 'user', content });
 
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
           model: 'claude-3-5-sonnet-20241022',
           max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content
-          }]
+          messages
         },
         {
           headers: {
@@ -102,9 +156,35 @@ class MainAIService {
     }
   }
 
-  private async sendToDeepSeek(params: { text: string; image?: string; apiKey: string }): Promise<string> {
+  private async sendToDeepSeek(params: { text: string; image?: string; apiKey: string; chatHistory?: any[] }): Promise<string> {
     try {
-      const messages: any[] = [{
+      const messages: any[] = [];
+      
+      // Add chat history context
+      if (params.chatHistory && params.chatHistory.length > 0) {
+        params.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            const content: any[] = [{ type: 'text', text: msg.content }];
+            if (msg.imagePath && fs.existsSync(msg.imagePath)) {
+              const imageBuffer = fs.readFileSync(msg.imagePath);
+              const imageBase64 = imageBuffer.toString('base64');
+              content.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } });
+            }
+            messages.push({
+              role: 'user',
+              content: content.length === 1 ? content[0].text : content
+            });
+          } else if (msg.role === 'assistant') {
+            messages.push({
+              role: 'assistant',
+              content: msg.content
+            });
+          }
+        });
+      }
+      
+      // Add current message
+      messages.push({
         role: 'user',
         content: params.image ? [
           { type: 'text', text: params.text },
@@ -115,7 +195,7 @@ class MainAIService {
             }
           }
         ] : params.text
-      }];
+      });
 
       const response = await axios.post(
         'https://api.deepseek.com/v1/chat/completions',
@@ -202,8 +282,9 @@ export function setupIpcHandlers(): void {
     imagePath?: string;
     provider: string;
     apiKey: string;
+    chatId?: number;
   }) => {
-    const { text, imagePath, provider, apiKey } = params;
+    const { text, imagePath, provider, apiKey, chatId } = params;
     
     try {
       let imageData = '';
@@ -212,10 +293,18 @@ export function setupIpcHandlers(): void {
         imageData = imageBuffer.toString('base64');
       }
 
+      // Get chat history if chatId is provided
+      let chatHistory: any[] = [];
+      if (chatId) {
+        const db = getDatabase();
+        chatHistory = db.getChatMessages(chatId);
+      }
+
       const response = await aiService.sendMessage(provider, {
         text,
         image: imageData,
-        apiKey
+        apiKey,
+        chatHistory
       });
 
       return response;

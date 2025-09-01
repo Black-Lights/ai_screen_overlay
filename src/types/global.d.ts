@@ -68,6 +68,8 @@ declare global {
         text: string;
         imagePath?: string;
         provider: string;
+        apiKey: string;
+        chatId?: number;
       }) => Promise<string>;
       
       // Window operations
