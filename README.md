@@ -1,35 +1,43 @@
 # AI Screen Overlay
 
-A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4o, Claude 3.7 Sonnet, and DeepSeek with full markdown rendering and professional chat features.
+A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4o, Claude 3.7 Sonnet, and DeepSeek with full markdown rendering, intelligent chat management, and professional conversation features.
 
 ## ✨ Key Features
 
 ### 🖼️ **Advanced Screen Capture**
 - **Global Hotkey**: Press `Ctrl+Shift+S` anywhere to capture screen areas
+- **Smart Workflow**: Screenshots added to current chat with option to move to new chat
 - **Precision Selection**: Click and drag to select exact regions
-- **Instant Processing**: Captured images automatically attached to chat
+- **Instant Processing**: Captured images automatically attached to conversations
 - **High Quality**: Full resolution capture with PNG encoding
+- **Seamless Integration**: Continue conversations with visual context
 
 ### 🤖 **Multi-LLM Intelligence**
 - **OpenAI Models**: GPT-4o, GPT-4o Mini, GPT-4 Turbo with vision capabilities
-- **Claude Models**: Sonnet 3.7, Sonnet 4, Opus 4.1, Opus 4, Haiku 3.5
+- **Claude Models**: Sonnet 3.7, Sonnet 4, Opus 4.1, Opus 4, Haiku 3.5 (official model IDs)
 - **DeepSeek Models**: Chat and Reasoner with cost-effective analysis
-- **Smart Routing**: Automatic model selection with fallback support
-- **Provider Status**: Real-time API key validation and status indicators
+- **Model Selection**: Dropdown menus with pricing information for each model
+- **Provider Status**: Real-time API key validation and connection testing
+- **Smart Identity**: Each AI model maintains proper identity and capabilities
 
 ### 💬 **Professional Chat Experience**
+- **Intelligent Naming**: Auto-generated chat titles based on conversation content
+- **Manual Renaming**: Inline editing with keyboard shortcuts (Enter/Escape)
+- **Smart Numbering**: Automatic "Chat 1", "Chat 2", "Screen Capture Chat 1" naming
 - **Markdown Rendering**: Full markdown support with syntax-highlighted code blocks
 - **Text Selection**: Select and copy any message content with one click
 - **Provider Attribution**: Each response shows AI provider and specific model used
 - **Chat History**: Persistent conversations with SQLite storage
 - **Context Awareness**: Full conversation context maintained across messages
+- **Move Screenshots**: Transfer screenshots between chats with one click
 
 ### 🎨 **Modern Interface**
 - **Glassmorphism Design**: Beautiful translucent overlay with blur effects
 - **Always On Top**: Stays accessible while you work on other applications
 - **Drag & Resize**: Repositionable and resizable overlay window
-- **Enhanced Contrast**: Optimized readability on any background
+- **Enhanced Contrast**: Optimized readability on any background with text shadows
 - **Responsive Layout**: Adapts to different screen sizes and orientations
+- **Professional Styling**: Dark theme with purple gradients and smooth animations
 
 ## 📋 System Requirements
 
@@ -92,44 +100,97 @@ DEEPSEEK_API_KEY=your-deepseek-key-here
 
 ### Advanced Features
 
-#### Screen Capture
+#### Screen Capture Workflow
+- **Smart Integration**: Screenshots added to current chat automatically
+- **Move to New Chat**: Option to transfer screenshots to new conversation
 - **Global Hotkey**: `Ctrl+Shift+S` works from any application
 - **Precision Selection**: Click and drag for exact area capture
 - **Multiple Captures**: Add multiple images to same conversation
-- **Cancel**: Press `Esc` during selection to cancel
+- **Cancel Support**: Press `Esc` during selection to cancel
+
+#### Intelligent Chat Management
+- **Auto-naming**: Chats automatically renamed based on conversation content
+- **Manual Renaming**: Inline editing with keyboard shortcuts (Enter/Escape)
+- **Smart Numbering**: "Chat 1", "Chat 2", "Screen Capture Chat 1" patterns
+- **Chat History**: Persistent storage with full conversation context
+- **Multiple Threads**: Create unlimited conversation threads
+- **Seamless Navigation**: Switch between chats while maintaining context
 
 #### AI Provider Selection
-- **Provider Dropdown**: Choose between OpenAI, Claude, or DeepSeek
-- **Model Selection**: Pick specific models with pricing information
-- **Status Indicators**: Real-time API key validation (🟢 Ready, 🔴 Error)
+- **Multi-model Dropdowns**: Choose specific models with pricing information
+- **Provider Status**: Real-time API key validation (🟢 Ready, 🔴 Error, ⚠️ Invalid)
+- **Connection Testing**: Live API connectivity verification
 - **Auto-switching**: Seamlessly switch providers mid-conversation
+- **Model Attribution**: Each response shows provider and model used
 
-#### Chat Management
-- **Multiple Chats**: Create unlimited conversation threads
-- **Chat History**: Persistent storage with full conversation context
-- **Search & Navigate**: Find specific conversations quickly
-- **Export/Import**: Backup and restore chat data
-
-#### Markdown & Formatting
-- **Rich Text Rendering**: Full markdown support in AI responses
-- **Code Highlighting**: Syntax highlighting for 100+ programming languages
+#### Enhanced Chat Features
+- **Markdown Rendering**: Full markdown support with syntax-highlighted code blocks
+- **Text Selection**: Select and copy any message content or portions
+- **Provider Info**: Each AI response shows provider and model information
+- **Rich Formatting**: Proper rendering of tables, lists, code blocks, and links
 - **Copy Support**: One-click copying of any message or code block
-- **Text Selection**: Select and copy portions of any message
+- **Visual Context**: Screenshots integrated seamlessly into conversation flow
 
 ## ⌨️ Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+Shift+S` | Capture screen area |
+| `Ctrl+Shift+S` | Capture screen area and add to current chat |
 | `Ctrl+Shift+A` | Toggle overlay visibility |
-| `Enter` | Send message |
+| `Enter` | Send message / Save chat rename |
 | `Shift+Enter` | New line in message |
-| `Esc` | Cancel screen capture |
+| `Esc` | Cancel screen capture / Cancel chat rename |
 | `Ctrl+C` | Copy selected text |
 
-## 🏗️ Architecture
+## 🎯 Usage Guide
 
-### Tech Stack
+### Basic Workflow
+1. **Start the app** and configure your AI provider API keys
+2. **Create or select a chat** from the sidebar
+3. **Take a screenshot** with `Ctrl+Shift+S` - it gets added to your current chat
+4. **Ask questions** about the screenshot or continue your conversation
+5. **Use "Move to New Chat"** if you want to discuss the screenshot separately
+
+### Chat Management
+- **New Chat**: Click the "+" button to create a new conversation
+- **Rename Chats**: Click the edit icon next to any chat title
+- **Auto-naming**: Chats are automatically renamed based on content after the first AI response
+- **Screen Capture Integration**: Screenshots flow seamlessly into your conversations
+
+### AI Provider Setup
+- **API Keys**: Add your OpenAI, Claude, and/or DeepSeek API keys in settings
+- **Model Selection**: Choose specific models with pricing information displayed
+- **Status Monitoring**: Green/red indicators show real-time API connectivity
+- **Provider Switching**: Change providers mid-conversation as needed
+
+## � Latest Features (v2.0)
+
+### ✨ **Smart Screen Capture Workflow**
+- Screenshots are automatically added to your current conversation
+- **Move to New Chat** option appears when you want to separate screenshot discussions
+- Smart detection of existing conversation context
+- Seamless integration without interrupting your workflow
+
+### 🏷️ **Intelligent Chat Management**
+- **Auto-naming**: Chats automatically get descriptive titles based on conversation content
+- **Manual Renaming**: Click edit icon for inline title editing with keyboard shortcuts
+- **Smart Numbering**: "Chat 1", "Chat 2", "Screen Capture Chat 1" patterns for new chats
+- **LLM-powered Titles**: AI analyzes conversation to generate meaningful names
+
+### 🎛️ **Enhanced UI/UX**
+- **Multi-model Selection**: Dropdowns for each provider with pricing information
+- **Real-time Status**: Live API connectivity testing with color-coded indicators
+- **Provider Attribution**: Every AI response shows which provider and model was used
+- **Enhanced Contrast**: Improved text readability with shadows and backdrop blur
+- **Professional Styling**: Polished dark theme with purple gradients
+
+### 🔧 **Technical Improvements**
+- **React Closure Fixes**: Robust event handling with useRef patterns
+- **Database Enhancements**: Full API key management with automatic synchronization
+- **Error Handling**: Comprehensive error management and user feedback
+- **Performance**: Optimized bundle size and loading times
+- **State Management**: Improved React state synchronization
+
 - **Frontend**: React 18 + TypeScript + Tailwind CSS
 - **Backend**: Electron 27 + Node.js + better-sqlite3
 - **Build**: Webpack 5 + TypeScript compiler
@@ -137,6 +198,59 @@ DEEPSEEK_API_KEY=your-deepseek-key-here
 - **Markdown**: ReactMarkdown + Prism syntax highlighting
 
 ### Project Structure
+```
+src/
+├── main/                    # Electron main process
+│   ├── main.ts             # Application entry point with global shortcuts
+│   ├── database.ts         # SQLite database service with chat management
+│   ├── screen-capture.ts   # Advanced screen capture with area selection
+│   ├── ipc-handlers.ts     # IPC communication handlers for all features
+│   └── preload.ts          # Secure preload script with event handling
+├── renderer/               # React frontend
+│   ├── App.tsx             # Main app with chat state management and screen capture
+│   ├── components/         # UI components
+│   │   ├── Overlay.tsx     # Main overlay container with window controls
+│   │   ├── ChatInterface.tsx # Chat UI with markdown and move-to-new-chat
+│   │   ├── ChatHistory.tsx # Sidebar with inline renaming functionality
+│   │   ├── LLMSelector.tsx # AI provider selection with status indicators
+│   │   └── Settings.tsx    # Configuration panel with API key management
+│   ├── services/           # Frontend services
+│   │   └── chatNamingService.ts # LLM-based automatic chat title generation
+│   └── styles/             # CSS and styling with glassmorphism
+├── shared/                 # Shared TypeScript definitions
+│   ├── types.ts           # Complete type definitions for all features
+│   └── models.ts          # AI model configurations with pricing
+└── types/                  # Global type declarations
+```
+
+### Database Schema
+```sql
+-- Chat conversations with intelligent naming
+CREATE TABLE chats (
+  id INTEGER PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat messages with full AI attribution and image support
+CREATE TABLE messages (
+  id INTEGER PRIMARY KEY,
+  chat_id INTEGER REFERENCES chats(id),
+  role TEXT CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  image_path TEXT,
+  provider TEXT,
+  model TEXT,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Application settings with API key management
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+```
 ```
 src/
 ├── main/                    # Electron main process

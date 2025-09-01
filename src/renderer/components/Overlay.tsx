@@ -10,9 +10,12 @@ interface OverlayProps {
   chats: Chat[];
   messages: Message[];
   settings: AppSettings;
+  showMoveToNewChatOption: boolean;
   onCreateChat: (title?: string) => Promise<Chat>;
   onSwitchChat: (chat: Chat) => void;
   onDeleteChat: (chatId: number) => void;
+  onUpdateChatTitle: (chatId: number, newTitle: string) => void;
+  onMoveToNewChat: () => void;
   onSendMessage: (text: string, imagePath?: string) => void;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
 }
@@ -22,9 +25,12 @@ const Overlay: React.FC<OverlayProps> = ({
   chats,
   messages,
   settings,
+  showMoveToNewChatOption,
   onCreateChat,
   onSwitchChat,
   onDeleteChat,
+  onUpdateChatTitle,
+  onMoveToNewChat,
   onSendMessage,
   onUpdateSettings,
 }) => {
@@ -285,7 +291,9 @@ const Overlay: React.FC<OverlayProps> = ({
           <ChatInterface
             currentChat={currentChat}
             messages={messages}
+            showMoveToNewChatOption={showMoveToNewChatOption}
             onSendMessage={onSendMessage}
+            onMoveToNewChat={onMoveToNewChat}
             provider={settings.selectedProvider}
           />
         </div>
@@ -300,6 +308,7 @@ const Overlay: React.FC<OverlayProps> = ({
               onCreateChat={onCreateChat}
               onSwitchChat={onSwitchChat}
               onDeleteChat={onDeleteChat}
+              onUpdateChatTitle={onUpdateChatTitle}
               onClose={() => setShowChatHistory(false)}
             />
           </div>

@@ -8,14 +8,18 @@ import { AVAILABLE_MODELS } from '@/shared/models';
 interface ChatInterfaceProps {
   currentChat: Chat | null;
   messages: Message[];
+  showMoveToNewChatOption: boolean;
   onSendMessage: (text: string, imagePath?: string) => void;
+  onMoveToNewChat: () => void;
   provider: string;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentChat,
   messages,
+  showMoveToNewChatOption,
   onSendMessage,
+  onMoveToNewChat,
   provider,
 }) => {
   const [inputText, setInputText] = useState('');
@@ -249,6 +253,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Move to New Chat Option */}
+      {showMoveToNewChatOption && (
+        <div className="px-4 py-3 border-t border-b border-white/10 bg-yellow-500/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm text-yellow-200">
+                Screenshot added to current chat
+              </span>
+            </div>
+            <button
+              onClick={onMoveToNewChat}
+              className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+            >
+              Move to New Chat
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="p-4 border-t border-white/10">
