@@ -1,3 +1,4 @@
+/// <reference path="../../types/global.d.ts" />
 import React, { useState, useEffect, useRef } from 'react';
 import ChatInterface from './ChatInterface';
 import ChatHistory from './ChatHistory';
@@ -74,6 +75,7 @@ const Overlay: React.FC<OverlayProps> = ({
       const newY = e.clientY - dragStart.y;
       
       // Move the actual Electron window instead of CSS positioning
+      // @ts-ignore - TypeScript doesn't recognize new electronAPI methods yet
       window.electronAPI.moveWindow(newX, newY);
       setPosition({ x: newX, y: newY });
     } else if (isResizing) {
@@ -84,6 +86,7 @@ const Overlay: React.FC<OverlayProps> = ({
       const newHeight = Math.max(300, Math.min(1400, resizeStart.height + deltaY));
       
       // Resize the actual Electron window
+      // @ts-ignore - TypeScript doesn't recognize new electronAPI methods yet
       window.electronAPI.resizeWindow(newWidth, newHeight);
       setSize({ width: newWidth, height: newHeight });
     }

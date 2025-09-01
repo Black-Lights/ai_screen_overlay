@@ -60,9 +60,6 @@ module.exports = {
     new webpack.DefinePlugin({
       'global': 'globalThis'
     }),
-    new webpack.EnvironmentPlugin({
-      'NODE_ENV': process.env.NODE_ENV || 'development'
-    }),
     new webpack.ProvidePlugin({
       global: 'globalThis',
       Buffer: ['buffer', 'Buffer']
@@ -73,6 +70,22 @@ module.exports = {
       entryOnly: false
     })
   ],
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendor',
+          chunks: 'all',
+          filename: 'vendor.bundle.js',
+        },
+      },
+    },
+  },
+  performance: {
+    hints: false, // Disable performance warnings for Electron apps
+  },
   devServer: {
     static: {
       directory: path.join(__dirname, 'dist/renderer'),

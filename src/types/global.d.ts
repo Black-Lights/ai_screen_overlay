@@ -1,4 +1,45 @@
-import { Chat, Message, AppSettings, ScreenCapture } from '../shared/types';
+// Global type declarations for Electron API
+interface Chat {
+  id: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Message {
+  id: number;
+  chatId: number;
+  role: 'user' | 'assistant';
+  content: string;
+  imagePath?: string;
+  provider?: string;
+  timestamp: string;
+}
+
+interface AppSettings {
+  openaiApiKey?: string;
+  claudeApiKey?: string;
+  deepseekApiKey?: string;
+  selectedProvider: string;
+  overlayPosition: {
+    x: number;
+    y: number;
+  };
+  overlaySize: {
+    width: number;
+    height: number;
+  };
+}
+
+interface ScreenCapture {
+  imagePath: string;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
 
 declare global {
   interface Window {
@@ -42,5 +83,3 @@ declare global {
     };
   }
 }
-
-export {};
