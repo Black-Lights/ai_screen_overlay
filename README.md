@@ -2,25 +2,37 @@
 
 A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4o, Claude 3.7 Sonnet, and DeepSeek with full markdown rendering, intelligent chat management, and professional conversation features.
 
-## ✨ Key Features
+## Key Features
 
-### 🖼️ **Advanced Screen Capture**
+### Advanced Screen Capture & Image Input
 - **Global Hotkey**: Press `Ctrl+Shift+S` anywhere to capture screen areas
-- **Smart Workflow**: Screenshots added to current chat with option to move to new chat
-- **Precision Selection**: Click and drag to select exact regions
-- **Instant Processing**: Captured images automatically attached to conversations
-- **High Quality**: Full resolution capture with PNG encoding
-- **Seamless Integration**: Continue conversations with visual context
+- **File Upload**: Upload images directly from files with file browser
+- **Clipboard Integration**: Paste images from clipboard with `Ctrl+V` or dedicated button
+- **Smart Workflow**: Images added to current chat with option to move to new chat
+- **Precision Selection**: Click and drag to select exact screen regions
+- **Format Support**: Supports PNG, JPG, GIF, and all common image formats
+- **File Validation**: Automatic size and format validation with user feedback
+- **High Quality**: Full resolution capture and processing
 
-### 🤖 **Multi-LLM Intelligence**
+### Professional Image Editing Suite
+- **Canvas Editor**: Built-in drawing tools for image annotation
+- **Drawing Tools**: Pen and eraser with customizable colors and brush sizes
+- **Undo/Redo**: Full history management with ImageData-based state tracking
+- **Responsive Design**: Works seamlessly on all screen sizes and devices
+- **Real-time Editing**: Live canvas updates with smooth drawing performance
+- **Color Palette**: Complete color selection with opacity controls
+- **Brush Controls**: Variable brush sizes for precise annotations
+- **Save Integration**: Edited images automatically replace originals in conversation
+
+### Multi-LLM Intelligence
 - **OpenAI Models**: GPT-4o, GPT-4o Mini, GPT-4 Turbo with vision capabilities
-- **Claude Models**: Sonnet 3.7, Sonnet 4, Opus 4.1, Opus 4, Haiku 3.5 (official model IDs)
+- **Claude Models**: Sonnet 3.7, Sonnet 4, Opus 4.1, Opus 4, Haiku 3.5
 - **DeepSeek Models**: Chat and Reasoner with cost-effective analysis
 - **Model Selection**: Dropdown menus with pricing information for each model
 - **Provider Status**: Real-time API key validation and connection testing
 - **Smart Identity**: Each AI model maintains proper identity and capabilities
 
-### 💬 **Professional Chat Experience**
+### Professional Chat Experience
 - **Intelligent Naming**: Auto-generated chat titles based on conversation content
 - **Manual Renaming**: Inline editing with keyboard shortcuts (Enter/Escape)
 - **Smart Numbering**: Automatic "Chat 1", "Chat 2", "Screen Capture Chat 1" naming
@@ -29,35 +41,29 @@ A powerful AI-powered screen capture and chat overlay application built with Ele
 - **Provider Attribution**: Each response shows AI provider and specific model used
 - **Chat History**: Persistent conversations with SQLite storage
 - **Context Awareness**: Full conversation context maintained across messages
-- **Move Screenshots**: Transfer screenshots between chats with one click
 
-### 🎨 **Modern Interface & Theming**
+### Modern Interface & Theming
 - **Dynamic Theme System**: Three distinct themes - Glassmorphism (Default), Dark, and Light
 - **Adaptive Opacity**: Automatically adjusts transparency based on system theme detection
 - **Glassmorphism Design**: Beautiful translucent overlay with blur effects and gradient backgrounds
 - **Smart Background Detection**: System theme awareness for optimal visibility
 - **Always On Top**: Stays accessible while you work on other applications
 - **Drag & Resize**: Repositionable and resizable overlay window with smooth interactions
-- **Enhanced Contrast**: Optimized readability on any background with text shadows and adaptive styling
+- **Enhanced Contrast**: Optimized readability on any background with text shadows
 - **Responsive Layout**: Adapts to different screen sizes and orientations
-- **Professional Styling**: Multiple theme options with purple gradients and smooth animations
-- **Settings Panel**: Modern modal interface with theme selection and opacity controls
 
-## 📋 System Requirements
-
-## 📋 System Requirements
+## System Requirements
 
 - **Operating System**: Windows, macOS, or Linux
 - **Node.js**: Version 16 or higher
-- **npm**: Version 8 or higher (comes with Node.js)
-- **Python**: Version 3.7 or higher (for AI processing)
+- **npm**: Version 8 or higher
 - **Git**: For version control and repository management
 - **Display Resolution**: Minimum 1024x768 (HD or higher recommended)
 - **GPU**: Hardware acceleration support recommended for smooth overlay rendering
 - **Memory**: Minimum 4GB RAM (8GB+ recommended for AI processing)
-- **System Theme Support**: Windows 10/11, macOS 10.14+, or Linux desktop environments with dark/light theme detection
+- **System Theme Support**: Windows 10/11, macOS 10.14+, or Linux desktop environments
 
-## � Quick Start
+## Quick Start
 
 ### Installation
 
@@ -98,117 +104,89 @@ DEEPSEEK_API_KEY=your-deepseek-key-here
 - **Claude**: [console.anthropic.com](https://console.anthropic.com/)
 - **DeepSeek**: [platform.deepseek.com](https://platform.deepseek.com/)
 
-## 🎯 How to Use
+## Usage Guide
 
 ### Basic Workflow
 1. **Launch** the application with `npm start`
 2. **Position** the overlay on your preferred screen location
-3. **Capture** screen areas with `Ctrl+Shift+S` hotkey
-4. **Select** your preferred AI provider and model
-5. **Analyze** images with natural language questions
-6. **Chat** with full markdown rendering and copy support
+3. **Add images** via screen capture (`Ctrl+Shift+S`), file upload, or clipboard paste (`Ctrl+V`)
+4. **Edit images** using the built-in canvas editor with drawing tools
+5. **Select** your preferred AI provider and model
+6. **Analyze** images with natural language questions
+7. **Chat** with full markdown rendering and copy support
 
-### Advanced Features
+### Image Input Methods
+- **Screen Capture**: Global hotkey `Ctrl+Shift+S` works from any application
+- **File Upload**: Click upload button to browse and select image files
+- **Clipboard Paste**: Use `Ctrl+V` or click clipboard button to paste copied images
+- **Format Support**: Supports PNG, JPG, GIF, and all common image formats
+- **Size Validation**: Automatic file size and format validation with error messages
 
-#### Screen Capture Workflow
-- **Smart Integration**: Screenshots added to current chat automatically
-- **Move to New Chat**: Option to transfer screenshots to new conversation
-- **Global Hotkey**: `Ctrl+Shift+S` works from any application
-- **Precision Selection**: Click and drag for exact area capture
-- **Multiple Captures**: Add multiple images to same conversation
-- **Cancel Support**: Press `Esc` during selection to cancel
-
-#### Intelligent Chat Management
-- **Auto-naming**: Chats automatically renamed based on conversation content
-- **Manual Renaming**: Inline editing with keyboard shortcuts (Enter/Escape)
-- **Smart Numbering**: "Chat 1", "Chat 2", "Screen Capture Chat 1" patterns
-- **Chat History**: Persistent storage with full conversation context
-- **Multiple Threads**: Create unlimited conversation threads
-- **Seamless Navigation**: Switch between chats while maintaining context
-
-#### AI Provider Selection
-- **Multi-model Dropdowns**: Choose specific models with pricing information
-- **Provider Status**: Real-time API key validation (🟢 Ready, 🔴 Error, ⚠️ Invalid)
-- **Connection Testing**: Live API connectivity verification
-- **Auto-switching**: Seamlessly switch providers mid-conversation
-- **Model Attribution**: Each response shows provider and model used
-
-#### Enhanced Chat Features
-- **Markdown Rendering**: Full markdown support with syntax-highlighted code blocks
-- **Text Selection**: Select and copy any message content or portions
-- **Provider Info**: Each AI response shows provider and model information
-- **Rich Formatting**: Proper rendering of tables, lists, code blocks, and links
-- **Copy Support**: One-click copying of any message or code block
-- **Visual Context**: Screenshots integrated seamlessly into conversation flow
-
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Shift+S` | Capture screen area and add to current chat |
-| `Ctrl+Shift+A` | Toggle overlay visibility |
-| `Enter` | Send message / Save chat rename |
-| `Shift+Enter` | New line in message |
-| `Esc` | Cancel screen capture / Cancel chat rename |
-| `Ctrl+C` | Copy selected text |
-
-## 🎯 Usage Guide
-
-### Basic Workflow
-1. **Start the app** and configure your AI provider API keys
-2. **Create or select a chat** from the sidebar
-3. **Take a screenshot** with `Ctrl+Shift+S` - it gets added to your current chat
-4. **Ask questions** about the screenshot or continue your conversation
-5. **Use "Move to New Chat"** if you want to discuss the screenshot separately
+### Image Editing Features
+- **Canvas Editor**: Click edit button on any image to open drawing tools
+- **Drawing Tools**: Choose between pen and eraser with color selection
+- **Brush Controls**: Adjustable brush size and opacity for precise annotations
+- **Undo/Redo**: Full history tracking with unlimited undo/redo operations
+- **Responsive Interface**: Canvas editor works on all screen sizes
+- **Save Integration**: Edited images automatically replace originals in conversation
 
 ### Chat Management
 - **New Chat**: Click the "+" button to create a new conversation
 - **Rename Chats**: Click the edit icon next to any chat title
 - **Auto-naming**: Chats are automatically renamed based on content after the first AI response
-- **Screen Capture Integration**: Screenshots flow seamlessly into your conversations
+- **Image Integration**: All images flow seamlessly into your conversations
 
 ### AI Provider Setup
 - **API Keys**: Add your OpenAI, Claude, and/or DeepSeek API keys in settings
 - **Model Selection**: Choose specific models with pricing information displayed
-- **Status Monitoring**: Green/red indicators show real-time API connectivity
+- **Status Monitoring**: Indicators show real-time API connectivity status
 - **Provider Switching**: Change providers mid-conversation as needed
 
-## � Latest Features (v2.1)
+## Keyboard Shortcuts
 
-### 🎨 **Advanced Theme System**
-- **Multiple Themes**: Choose from Glassmorphism (Default), Dark, and Light themes
-- **Adaptive Opacity**: Automatic transparency adjustment based on system theme detection
-- **Background Detection Service**: Smart system theme awareness using CSS media queries
-- **Dynamic Styling**: Real-time theme switching with optimized opacity for light/dark backgrounds
-- **Enhanced Readability**: 95% opacity on light backgrounds, 85% on dark backgrounds for optimal contrast
-- **Settings Integration**: Easy theme selection and adaptive opacity toggle in settings panel
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+S` | Capture screen area and add to current chat |
+| `Ctrl+V` | Paste image from clipboard |
+| `Enter` | Send message / Save chat rename |
+| `Shift+Enter` | New line in message |
+| `Esc` | Cancel screen capture / Cancel chat rename |
+| `Ctrl+C` | Copy selected text |
 
-### ✨ **Smart Screen Capture Workflow**
-- Screenshots are automatically added to your current conversation
-- **Move to New Chat** option appears when you want to separate screenshot discussions
-- Smart detection of existing conversation context
-- Seamless integration without interrupting your workflow
+## Latest Features (v2.2)
 
-### 🏷️ **Intelligent Chat Management**
-- **Auto-naming**: Chats automatically get descriptive titles based on conversation content
-- **Manual Renaming**: Click edit icon for inline title editing with keyboard shortcuts
-- **Smart Numbering**: "Chat 1", "Chat 2", "Screen Capture Chat 1" patterns for new chats
-- **LLM-powered Titles**: AI analyzes conversation to generate meaningful names
+### Complete Image Workflow
+- **File Upload Support**: Browse and upload images directly from file system
+- **Clipboard Integration**: Full clipboard paste support with `Ctrl+V` hotkey
+- **Universal Image Editing**: All uploaded, pasted, and captured images work with canvas editor
+- **Format Validation**: Smart file type and size validation with user feedback
+- **Seamless Integration**: All image sources work identically in chat workflow
 
-### 🎛️ **Enhanced UI/UX**
-- **Multi-model Selection**: Dropdowns for each provider with pricing information
-- **Real-time Status**: Live API connectivity testing with color-coded indicators
-- **Provider Attribution**: Every AI response shows which provider and model was used
-- **Enhanced Contrast**: Improved text readability with shadows and backdrop blur
-- **Professional Styling**: Polished dark theme with purple gradients
+### Advanced Canvas Editor
+- **Professional Drawing Tools**: Pen and eraser with customizable properties
+- **Color Palette**: Full color selection with opacity controls
+- **Brush Size Control**: Variable brush sizes for precise annotations
+- **Undo/Redo System**: ImageData-based history tracking for reliable state management
+- **Responsive Design**: Fully responsive canvas that works on all screen sizes
+- **Real-time Updates**: Smooth drawing performance with optimized rendering
 
-### 🔧 **Technical Improvements**
-- **React Closure Fixes**: Robust event handling with useRef patterns
-- **Database Enhancements**: Full API key management with automatic synchronization
-- **Error Handling**: Comprehensive error management and user feedback
-- **Performance**: Optimized bundle size and loading times
-- **State Management**: Improved React state synchronization
+### Enhanced User Experience
+- **Smart Paste Detection**: Automatic image detection from clipboard
+- **Error Handling**: Comprehensive error messages and recovery
+- **File Validation**: Size limits and format checking with clear feedback
+- **Keyboard Integration**: Full keyboard support for common operations
+- **Visual Feedback**: Tooltips and hover states for all interactive elements
 
+### Technical Improvements
+- **IPC Architecture**: Robust Inter-Process Communication for image handling
+- **File Management**: Automatic file organization with unique naming
+- **Memory Optimization**: Efficient image processing and cleanup
+- **Cross-Platform Support**: Works consistently across Windows, macOS, and Linux
+- **Security**: Proper input validation and secure file handling
+
+## Technical Architecture
+
+### Technology Stack
 - **Frontend**: React 18 + TypeScript + Tailwind CSS
 - **Backend**: Electron 27 + Node.js + better-sqlite3
 - **Build**: Webpack 5 + TypeScript compiler
@@ -225,12 +203,13 @@ src/
 │   ├── ipc-handlers.ts     # IPC communication handlers for all features
 │   └── preload.ts          # Secure preload script with event handling
 ├── renderer/               # React frontend
-│   ├── App.tsx             # Main app with chat state management and screen capture
+│   ├── App.tsx             # Main app with chat state management
 │   ├── components/         # UI components
 │   │   ├── Overlay.tsx     # Main overlay container with window controls
-│   │   ├── ChatInterface.tsx # Chat UI with markdown and move-to-new-chat
+│   │   ├── ChatInterface.tsx # Chat UI with image upload and editing
 │   │   ├── ChatHistory.tsx # Sidebar with inline renaming functionality
 │   │   ├── LLMSelector.tsx # AI provider selection with status indicators
+│   │   ├── ImageCanvas.tsx # Canvas editor for image annotation
 │   │   └── Settings.tsx    # Configuration panel with API key management
 │   ├── services/           # Frontend services
 │   │   └── chatNamingService.ts # LLM-based automatic chat title generation
@@ -269,71 +248,17 @@ CREATE TABLE settings (
   value TEXT NOT NULL
 );
 ```
-```
-src/
-├── main/                    # Electron main process
-│   ├── main.ts             # Application entry point
-│   ├── database.ts         # SQLite database service
-│   ├── screen-capture.ts   # Screen capture implementation
-│   ├── ipc-handlers.ts     # IPC communication handlers
-│   └── preload.ts          # Preload script for security
-├── renderer/               # React frontend
-│   ├── App.tsx             # Main application component
-│   ├── components/         # UI components
-│   │   ├── Overlay.tsx     # Main overlay container
-│   │   ├── ChatInterface.tsx # Chat UI with markdown
-│   │   ├── LLMSelector.tsx # AI provider selection
-│   │   └── Settings.tsx    # Configuration panel
-│   ├── services/           # Frontend services
-│   └── styles/             # CSS and styling
-├── shared/                 # Shared TypeScript definitions
-│   ├── types.ts           # Type definitions
-│   └── models.ts          # AI model configurations
-└── types/                  # Global type declarations
-```
 
-### Database Schema
-```sql
--- Chat conversations
-CREATE TABLE chats (
-  id INTEGER PRIMARY KEY,
-  title TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Chat messages with AI attribution
-CREATE TABLE messages (
-  id INTEGER PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id),
-  role TEXT CHECK (role IN ('user', 'assistant')),
-  content TEXT NOT NULL,
-  image_path TEXT,
-  provider TEXT,
-  model TEXT,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Application settings
-CREATE TABLE settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
-```
-
-## 🔧 Development
+## Development
 
 ### Development Setup
 ```bash
 # Clone repository
-git clone https://github.com/your-username/ai-screen-overlay.git
-cd ai-screen-overlay
+git clone https://github.com/Black-Lights/ai_screen_overlay.git
+cd ai_screen_overlay
 
 # Install Node.js dependencies
 npm install
-
-# Install Python dependencies (for AI processing)
-pip install -r requirements.txt
 
 # Setup environment variables
 cp .env.example .env
@@ -344,11 +269,6 @@ npm run dev          # Starts both Electron and React dev servers
 npm run dev:react    # React development server only
 npm run dev:electron # Electron development mode only
 ```
-
-### Dependency Files
-- **`node-requirements.txt`**: Complete list of Node.js packages with versions
-- **`requirements.txt`**: Python packages for AI processing and image handling
-- **`package.json`**: NPM configuration with all development and runtime dependencies
 
 ### Build Commands
 ```bash
@@ -365,14 +285,7 @@ npm run type-check     # TypeScript validation
 npm test              # Run test suite
 ```
 
-## 📦 Distribution & Deployment
-
-### Quick Distribution
-
-**For end users**: Download ready-to-run apps:
-- **Linux**: `AI-Screen-Overlay-1.0.0-x86_64.AppImage` - Works on all distributions
-- **Windows**: `AI-Screen-Overlay-Setup-1.0.0.exe` - Standard installer
-- **macOS**: `AI-Screen-Overlay-1.0.0.dmg` - Drag to Applications
+## Distribution & Deployment
 
 ### Building Distributions
 
@@ -392,41 +305,27 @@ Create installable applications for all platforms:
 ./build-dist.sh portable # Portable versions only
 ```
 
-**📋 See [DISTRIBUTION.md](DISTRIBUTION.md) for complete distribution guide**
+See [DISTRIBUTION.md](DISTRIBUTION.md) for complete distribution guide.
 
-### Distribution Formats Created
+### Distribution Formats
 
-#### **Windows** 🪟
+#### Windows
 - **`.exe` Installer (NSIS)**: Full installer with Start Menu shortcuts
 - **`.exe` Portable**: No installation required, run directly
 - **Features**: Desktop shortcuts, auto-updater, uninstaller
 
-#### **macOS** 🍎  
+#### macOS
 - **`.dmg` Installer**: Standard macOS app installer
 - **Universal Binary**: Supports both Intel (x64) and Apple Silicon (arm64)
 - **Features**: Code signing ready, Gatekeeper compatible
 
-#### **Linux** 🐧
-- **`.AppImage`**: Portable, runs on any Linux distribution ⭐ **Recommended**
+#### Linux
+- **`.AppImage`**: Portable, runs on any Linux distribution (Recommended)
 - **`.deb` Package**: For Debian/Ubuntu systems (apt install)
-- **`.rpm` Package**: For RedHat/Fedora systems (yum/dnf install) 
+- **`.rpm` Package**: For RedHat/Fedora systems (yum/dnf install)
 - **`.snap` Package**: Universal Linux package (snap install)
 
-### Adding New Features
-
-#### New AI Provider
-1. Add provider config to `src/shared/models.ts`
-2. Implement API client in `src/main/ipc-handlers.ts`
-3. Update UI selectors in `src/renderer/components/LLMSelector.tsx`
-4. Add API key handling in settings
-
-#### New UI Components
-1. Create component in `src/renderer/components/`
-2. Add styling in `src/renderer/styles/globals.css`
-3. Import and use in parent components
-4. Update TypeScript types if needed
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -454,16 +353,6 @@ npm install
 npm run build
 ```
 
-#### Performance Issues
-```bash
-# Monitor resource usage
-htop
-# Check database size
-du -h data/chats.db
-# Clean temporary files
-npm run clean
-```
-
 ### Debug Mode
 ```bash
 # Enable verbose logging
@@ -473,7 +362,7 @@ DEBUG=* npm start
 tail -f electron-debug.log
 ```
 
-## 📊 Performance
+## Performance
 
 ### Optimizations
 - **Lazy Loading**: Components loaded on demand
@@ -488,13 +377,13 @@ tail -f electron-debug.log
 - **AI Response**: Varies by provider (2-10 seconds)
 - **Memory Usage**: ~150-200MB RAM
 
-## 🔒 Privacy & Security
+## Privacy & Security
 
 ### Data Protection
 - **Local Storage**: All data remains on your machine
 - **No Telemetry**: Zero tracking or analytics
 - **Secure APIs**: Direct HTTPS communication with AI providers
-- **Temporary Files**: Screenshots auto-deleted after processing
+- **Temporary Files**: Images auto-deleted after processing
 
 ### Security Practices
 - **Environment Variables**: API keys stored in .env file
@@ -502,29 +391,42 @@ tail -f electron-debug.log
 - **Input Validation**: All user inputs sanitized
 - **Error Handling**: Graceful error recovery without data loss
 
-## 🚀 Roadmap
+## Roadmap
 
 ### Upcoming Features
-- [ ] **Multi-language Support**: Internationalization
-- [ ] **Plugin System**: Custom AI provider plugins
-- [ ] **Export Options**: PDF, HTML conversation export
-- [ ] **Voice Input**: Speech-to-text integration
-- [ ] **Cloud Sync**: Optional cloud backup (encrypted)
-- [x] **Themes**: Advanced theme system with Glassmorphism, Dark, and Light options
-- [ ] **Annotations**: Draw on captured images
-- [ ] **OCR**: Text extraction from images
+- **Multi-language Support**: Internationalization
+- **Plugin System**: Custom AI provider plugins
+- **Export Options**: PDF, HTML conversation export
+- **Voice Input**: Speech-to-text integration
+- **Cloud Sync**: Optional cloud backup (encrypted)
+- **OCR**: Text extraction from images
+- **Drag & Drop**: Direct file drag and drop support
 
 ### Performance Improvements
-- [ ] **Streaming Responses**: Real-time AI response streaming
-- [ ] **Caching**: Intelligent response caching
-- [ ] **Compression**: Database and image optimization
-- [ ] **Background Processing**: Non-blocking AI operations
+- **Streaming Responses**: Real-time AI response streaming
+- **Caching**: Intelligent response caching
+- **Compression**: Database and image optimization
+- **Background Processing**: Non-blocking AI operations
 
-## 📄 License
+## Adding New Features
+
+### New AI Provider
+1. Add provider config to `src/shared/models.ts`
+2. Implement API client in `src/main/ipc-handlers.ts`
+3. Update UI selectors in `src/renderer/components/LLMSelector.tsx`
+4. Add API key handling in settings
+
+### New UI Components
+1. Create component in `src/renderer/components/`
+2. Add styling in `src/renderer/styles/globals.css`
+3. Import and use in parent components
+4. Update TypeScript types if needed
+
+## License
 
 MIT License - see [LICENSE](LICENSE) file for full details.
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our contributing guidelines:
 
@@ -539,9 +441,9 @@ We welcome contributions! Please see our contributing guidelines:
 - Add tests for new features
 - Update documentation
 - Ensure accessibility compliance
-- Test on multiple Linux distributions
+- Test on multiple platforms
 
-## 💖 Acknowledgments
+## Acknowledgments
 
 Special thanks to:
 - **Electron Team** - Cross-platform desktop framework
@@ -551,6 +453,7 @@ Special thanks to:
 
 ---
 
-**🌟 Star this repository if you find it helpful!**
+**Star this repository if you find it helpful!**
 
-Built with ❤️ for the Linux community by [Black-Lights](https://github.com/Black-Lights)
+**Author**: [Ammar (Black-Lights)](https://github.com/Black-Lights)  
+**Project**: AI Screen Overlay - Professional AI-powered screen capture and chat application

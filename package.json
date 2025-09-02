@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "AI-powered screen capture and chat overlay with multi-LLM support",
   "main": "dist/main/main/main.js",
-  "author": "AI Screen Overlay Team",
+  "author": {
+    "name": "AI Screen Overlay Team",
+    "email": "team@aiscreenoverlay.dev"
+  },
   "license": "MIT",
   "homepage": "./",
   "scripts": {
@@ -16,7 +19,10 @@
     "dist": "npm run build && electron-builder",
     "dist:all": "npm run build && electron-builder --publish=never --win --mac --linux",
     "dist:win": "npm run build && electron-builder --win",
-    "dist:mac": "npm run build && electron-builder --mac", 
+    "dist:win:portable": "npm run build && electron-builder --win portable",
+    "dist:win:nsis": "npm run build && electron-builder --win nsis",
+    "dist:win:both": "npm run dist:win:portable && npm run dist:win:nsis",
+    "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
     "dist:portable": "npm run build && electron-builder --win portable --mac dmg --linux AppImage",
     "clean": "rm -rf dist build node_modules/.cache",
@@ -39,6 +45,7 @@
     "css-loader": "^6.8.1",
     "electron": "^27.1.3",
     "electron-builder": "^24.9.1",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -60,16 +67,20 @@
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
     "axios": "^1.6.2",
-    "better-sqlite3": "^9.2.2",
-    "dotenv": "^16.6.1",
+    "better-sqlite3": "^9.6.0",
+    "canvas": "^3.2.0",
     "electron-is-dev": "^2.0.0",
     "electron-screenshot": "^1.0.5",
+    "katex": "^0.16.22",
+    "lucide-react": "^0.542.0",
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.6",
     "rehype-highlight": "^7.0.2",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "screenshot-desktop": "^1.15.0"
   },
   "build": {
@@ -83,76 +94,122 @@
     "files": [
       "dist/**/*",
       "package.json",
-      "!node_modules",
+      ".env.example",
+      "first-run-setup.sh",
       "!src",
       "!docs",
-      "!.git"
+      "!.git",
+      "!.env"
     ],
     "extraResources": [
       {
         "from": ".env.example",
         "to": ".env.example"
+      },
+      {
+        "from": "first-run-setup.sh",
+        "to": "first-run-setup.sh"
       }
     ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico",
       "requestedExecutionLevel": "asInvoker",
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "publisherName": "AI Screen Overlay Team"
+      "publisherName": "AI Screen Overlay Team",
+      "verifyUpdateCodeSignature": false,
+      "extraFiles": [
+        {
+          "from": "build/app.manifest",
+          "to": "app.manifest"
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "perMachine": true,
+      "artifactName": "${productName}-${version}-Installer-${arch}.${ext}",
+      "uninstallDisplayName": "${productName}",
+      "installerLanguages": [
+        "en_US"
+      ],
+      "menuCategory": "Productivity"
     },
     "mac": {
       "target": [
         {
-          "target": "dmg",
-          "arch": ["x64", "arm64"]
-        },
-        {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "build/icon.icns",
       "category": "public.app-category.productivity",
       "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "hardenedRuntime": true,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "hardenedRuntime": true
     },
     "linux": {
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "snap",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "rpm",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "tar.gz",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.png",
@@ -164,14 +221,6 @@
         "Categories": "Utility;Graphics;Office;",
         "Keywords": "AI;Screenshot;Chat;Overlay;Assistant;"
       }
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "AI Screen Overlay",
-      "include": "build/installer.nsh"
     },
     "dmg": {
       "background": "build/dmg-background.png",

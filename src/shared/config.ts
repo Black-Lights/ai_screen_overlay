@@ -1,8 +1,26 @@
-import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
+
+// Load environment variables manually instead of using dotenv
+const loadEnvFile = () => {
+  const envPath = path.join(process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const [key, ...valueParts] = trimmedLine.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').trim();
+          process.env[key.trim()] = value;
+        }
+      }
+    });
+  }
+};
 
 // Load environment variables
-dotenv.config();
+loadEnvFile();
 
 export const config = {
   database: {

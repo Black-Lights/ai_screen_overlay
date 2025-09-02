@@ -2,8 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { Chat, Message } from '@/shared/types';
 import { AVAILABLE_MODELS } from '@/shared/models';
+import { ImageCanvas } from './ImageCanvas';
 
 interface ChatInterfaceProps {
   currentChat: Chat | null;
@@ -12,6 +16,9 @@ interface ChatInterfaceProps {
   onSendMessage: (text: string, imagePath?: string) => void;
   onMoveToNewChat: () => void;
   provider: string;
+  showZoomControls: boolean;
+  zoomControlsRef?: React.RefObject<HTMLDivElement>;
+  onImageRemoved?: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -21,12 +28,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   onMoveToNewChat,
   provider,
+  showZoomControls,
+  zoomControlsRef,
+  onImageRemoved,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [showImageEditor, setShowImageEditor] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollToBottom();
@@ -40,8 +55,56 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     };
 
+    // Listen for paste events
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Only handle paste if textarea is focused or if no specific element is focused
+      const activeElement = document.activeElement;
+      if (activeElement !== textareaRef.current && activeElement !== document.body) {
+        return;
+      }
+
+      const clipboardItems = e.clipboardData?.items;
+      if (!clipboardItems) return;
+
+      for (let i = 0; i < clipboardItems.length; i++) {
+        const item = clipboardItems[i];
+        if (item.type.startsWith('image/')) {
+          e.preventDefault(); // Prevent default paste behavior
+          const blob = item.getAsFile();
+          if (blob) {
+            try {
+              const arrayBuffer = await blob.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
+              const extension = item.type.split('/')[1] || 'png';
+              const filename = `clipboard-${Date.now()}.${extension}`;
+              const savedPath = await window.electronAPI.saveUploadedImage(uint8Array, filename);
+              setCurrentImage(savedPath);
+            } catch (error) {
+              console.error('Failed to paste image:', error);
+            }
+          }
+          return;
+        }
+      }
+    };
+
     window.electronAPI?.onScreenCaptureComplete(handleScreenCapture);
+    document.addEventListener('paste', handlePaste);
+
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
   }, []);
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const maxHeight = 200; // Max height in pixels
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+    }
+  }, [inputText]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,35 +138,175 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const removeImage = () => {
     setCurrentImage(null);
+    onImageRemoved?.(); // Notify parent that image was removed
   };
 
-  const copyToClipboard = async (text: string) => {
+  const editImage = () => {
+    if (currentImage) {
+      console.log('Opening image editor for:', currentImage);
+      setShowImageEditor(true);
+    }
+  };
+
+  const handleSaveEditedImage = (editedImagePath: string) => {
+    console.log('Image edited and saved:', editedImagePath);
+    setCurrentImage(editedImagePath);
+    setShowImageEditor(false);
+  };
+
+  const handleCloseImageEditor = () => {
+    setShowImageEditor(false);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Check file size (limit to 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size too large. Please select an image smaller than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+      if (arrayBuffer) {
+        try {
+          // Save the uploaded image using IPC
+          const uint8Array = new Uint8Array(arrayBuffer);
+          const savedPath = await window.electronAPI.saveUploadedImage(uint8Array, file.name);
+          setCurrentImage(savedPath);
+        } catch (error) {
+          console.error('Failed to save uploaded image:', error);
+          alert('Failed to upload image');
+        }
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+    // Reset the input
+    event.target.value = '';
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/')) {
+            const blob = await clipboardItem.getType(type);
+            const arrayBuffer = await blob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            // Generate filename with current timestamp
+            const extension = type.split('/')[1] || 'png';
+            const filename = `clipboard-${Date.now()}.${extension}`;
+            
+            const savedPath = await window.electronAPI.saveUploadedImage(uint8Array, filename);
+            setCurrentImage(savedPath);
+            return;
+          }
+        }
+      }
+      
+      alert('No image found in clipboard');
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
+      alert('Failed to paste image from clipboard');
+    }
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+
+  const copyToClipboard = async (text: string, messageId: number) => {
     try {
       await navigator.clipboard.writeText(text);
-      // Could add a toast notification here
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
     }
   };
 
+  const preprocessMathContent = (content: string) => {
+    // Convert LaTeX delimiters to markdown math format that remark-math can handle
+    return content
+      // Convert display math \[ ... \] to $$ ... $$
+      .replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
+        return `$$${formula}$$`;
+      })
+      // Convert inline math \( ... \) to $ ... $
+      .replace(/\\\((.*?)\\\)/g, (match, formula) => {
+        return `$${formula}$`;
+      });
+  };
+
   const formatMessage = (content: string) => {
+    // Preprocess to convert LaTeX delimiters
+    const processedContent = preprocessMathContent(content);
+    
     return (
       <div className="markdown-content">
         <ReactMarkdown
+          remarkPlugins={[remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={{
-            code({ node, className, children, ...props }: any) {
+            code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
-              return match ? (
-                <SyntaxHighlighter
-                  style={oneDark as any}
-                  language={match[1]}
-                  PreTag="div"
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
-              ) : (
-                <code className={`${className} bg-black/50 px-1 py-0.5 rounded text-sm`} {...props}>
+              
+              if (!inline && match) {
+                const codeContent = String(children).replace(/\n$/, '');
+                const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
+                
+                const handleCopyCode = async () => {
+                  await navigator.clipboard.writeText(codeContent);
+                  setCopiedCodeId(codeId);
+                  setTimeout(() => setCopiedCodeId(null), 2000);
+                };
+                
+                return (
+                  <div className="relative group">
+                    <button
+                      onClick={handleCopyCode}
+                      className={`absolute top-2 right-2 p-1.5 rounded transition-all duration-200 z-30 ${
+                        copiedCodeId === codeId 
+                          ? 'opacity-100 bg-green-500/95 text-white shadow-lg' 
+                          : 'opacity-0 group-hover:opacity-100 bg-white/15 hover:bg-white/25'
+                      }`}
+                      title="Copy code"
+                    >
+                      {copiedCodeId === codeId ? (
+                        <span className="text-xs text-white font-semibold whitespace-nowrap px-2 py-1">Copied!</span>
+                      ) : (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </button>
+                    <SyntaxHighlighter
+                      style={oneDark as any}
+                      language={match[1]}
+                      PreTag="div"
+                      {...props}
+                    >
+                      {codeContent}
+                    </SyntaxHighlighter>
+                  </div>
+                );
+              }
+              
+              return (
+                <code className={`${className} bg-black/50 px-1 py-0.5 rounded text-sm font-mono`} {...props}>
                   {children}
                 </code>
               );
@@ -122,7 +325,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             ),
           }}
         >
-          {content}
+          {processedContent}
         </ReactMarkdown>
       </div>
     );
@@ -153,8 +356,53 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Collapsible Zoom Controls */}
+      {showZoomControls && (
+        <div ref={zoomControlsRef} className="flex justify-end items-center p-2 border-b border-white/10 bg-black/20">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-white/60">Zoom:</span>
+            <button
+              onClick={() => setZoomLevel(Math.max(0.8, zoomLevel - 0.1))}
+              className="p-1 rounded hover:bg-white/20 transition-colors text-white/60 hover:text-white"
+              title="Zoom Out"
+            >
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <span className="text-xs text-white/70 min-w-[3rem] text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <button
+              onClick={() => setZoomLevel(Math.min(1.5, zoomLevel + 0.1))}
+              className="p-1 rounded hover:bg-white/20 transition-colors text-white/60 hover:text-white"
+              title="Zoom In"
+            >
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setZoomLevel(1)}
+              className="text-xs px-2 py-1 rounded hover:bg-white/20 transition-colors text-white/60 hover:text-white"
+              title="Reset Zoom"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+      <div 
+        className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4"
+        style={{ 
+          fontSize: `${zoomLevel}rem`,
+          transform: `scale(${Math.max(1, zoomLevel)})`,
+          transformOrigin: 'top left',
+          width: zoomLevel > 1 ? `${100 / zoomLevel}%` : '100%'
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-white/90" style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>
@@ -180,14 +428,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               >
                 {/* Copy button */}
                 <button
-                  onClick={() => copyToClipboard(message.content)}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-white/20 hover:bg-white/30"
+                  onClick={() => copyToClipboard(message.content, message.id)}
+                  className={`absolute top-2 right-2 transition-opacity p-1 rounded bg-white/20 hover:bg-white/30 ${
+                    copiedMessageId === message.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
                   title="Copy message"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v6h2V5h8v6h2V5a2 2 0 00-2-2H6zM4 9a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2H4z" />
-                  </svg>
+                  {copiedMessageId === message.id ? (
+                    <span className="text-xs text-green-400 font-medium whitespace-nowrap">Copied!</span>
+                  ) : (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                      <path d="M6 3a2 2 0 00-2 2v6h2V5h8v6h2V5a2 2 0 00-2-2H6zM4 9a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2H4z" />
+                    </svg>
+                  )}
                 </button>
 
                 {/* Show image if present */}
@@ -288,6 +542,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               className="max-w-32 h-auto rounded border border-white/20"
             />
             <button
+              onClick={editImage}
+              className="absolute -top-2 -right-10 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs transition-colors"
+              title="Edit image"
+            >
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+            </button>
+            <button
               onClick={removeImage}
               className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors"
               title="Remove image"
@@ -305,10 +568,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={currentImage ? "Ask about your screenshot..." : "Type a message..."}
-              className="chat-input"
-              rows={2}
+              className="chat-input resize-y"
               disabled={isLoading}
+              style={{ minHeight: '50px', maxHeight: '200px' }}
             />
+          </div>
+
+          {/* File upload and clipboard buttons */}
+          <div className="flex flex-col space-y-1">
+            <button
+              type="button"
+              onClick={openFileDialog}
+              className="glass-button p-2"
+              title="Upload image from file"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            
+            <button
+              type="button"
+              onClick={handlePasteFromClipboard}
+              className="glass-button p-2"
+              title="Paste image from clipboard"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+              </svg>
+            </button>
           </div>
           
           <button
@@ -322,10 +611,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
         </form>
 
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+
         <div className="mt-2 text-xs text-white/50 text-center">
-          Press Shift+Enter for new line • Enter to send
+          Press Shift+Enter for new line • Enter to send • Ctrl+V to paste images
         </div>
       </div>
+
+      {/* Image Editor Modal */}
+      {showImageEditor && currentImage && (
+        <ImageCanvas
+          imagePath={currentImage}
+          onSave={handleSaveEditedImage}
+          onClose={handleCloseImageEditor}
+        />
+      )}
     </div>
   );
 };

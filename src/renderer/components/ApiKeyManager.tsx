@@ -34,10 +34,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     { id: 'deepseek', name: 'DeepSeek', keyField: 'deepseekApiKey' as keyof AppSettings },
   ];
 
-  // Check API status on component mount and when settings change
-  useEffect(() => {
-    checkApiStatus();
-  }, [settings.openaiApiKey, settings.claudeApiKey, settings.deepseekApiKey]);
+  // Remove automatic API key validation - only validate on manual refresh
+  // This prevents excessive API calls when opening settings page
 
   const checkApiStatus = async () => {
     setIsCheckingStatus(true);

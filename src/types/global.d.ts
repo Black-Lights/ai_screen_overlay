@@ -87,9 +87,16 @@ export interface ElectronAPI {
   resizeWindow: (width: number, height: number) => Promise<void>;
   toggleWindow: () => Promise<void>;
   
+  // Image editing operations
+  saveEditedImage: (filePath: string, buffer: Uint8Array) => Promise<{ success: boolean; path: string }>;
+  saveUploadedImage: (buffer: Uint8Array, filename: string) => Promise<string>;
+  
   // Screen capture events
   onScreenCaptureComplete: (callback: (data: ScreenCapture) => void) => void;
   onScreenCaptureError: (callback: (error: string) => void) => void;
+
+  // External link operations
+  openExternal: (url: string) => Promise<void>;
 
   // Selection events (for screen capture overlay)
   selectionComplete: (selection: any) => void;

@@ -163,31 +163,18 @@ const App: React.FC = () => {
       console.log('✅ Using existing current chat:', targetChat.title);
     }
     
-    // Create a message with the captured image
-    console.log('💬 Creating message with captured image in chat:', targetChat.title);
-    const imageMessage = await window.electronAPI.saveMessage({
-      chatId: targetChat.id,
-      role: 'user',
-      content: 'Screenshot captured',
-      imagePath: captureData.imagePath
-    });
+    // Don't create any automatic message - just handle the image preview
+    // The ChatInterface will show the image in the preview area via onScreenCaptureComplete
+    console.log('📷 Screenshot captured, image will be shown in preview area');
     
-    console.log('✅ Image message created:', imageMessage);
-    
-    // Update messages list
-    const updatedMessages = [...messagesAtCapture, imageMessage];
+    // Keep messages unchanged - no automatic message creation
+    const updatedMessages = [...messagesAtCapture];
     setMessages(updatedMessages);
     messagesRef.current = updatedMessages;
     
-    // Set flag to show move to new chat option (only if current chat had other messages before the screenshot)
-    const hadPreviousMessages = messagesAtCapture.length > 0;
-    if (hadPreviousMessages) {
-      console.log('🔄 Chat had previous messages, showing move to new chat option');
-      setShowMoveToNewChatOption(true);
-    } else {
-      console.log('📝 Chat was empty, no move option needed');
-      setShowMoveToNewChatOption(false);
-    }
+    // Always show move to new chat option when there's a screenshot
+    console.log('🔄 Screenshot captured, showing move to new chat option');
+    setShowMoveToNewChatOption(true);
     
     console.log('✅ Screen capture handled successfully');
   };
@@ -195,33 +182,17 @@ const App: React.FC = () => {
   const moveToNewChat = async () => {
     if (!currentChat) return;
     
-    // Get the last image message (screenshot)
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage?.imagePath) return;
-    
     try {
-      console.log('🔄 Moving screenshot to new chat...');
+      console.log('🔄 Creating new chat for screenshot...');
       
       // Create a new screen capture chat
       const newChat = await createNewChat('Screen Capture Chat');
       console.log('✅ Created new screen capture chat:', newChat.title);
       
-      // Save the screenshot message to the new chat
-      await window.electronAPI.saveMessage({
-        chatId: newChat.id,
-        role: 'user',
-        content: lastMessage.content,
-        imagePath: lastMessage.imagePath
-      });
-      console.log('✅ Screenshot message moved to new chat');
-      
-      // Switch to the new chat
+      // Switch to the new chat - the image will remain in the preview area
       setCurrentChat(newChat);
       const newChatMessages = await window.electronAPI.getChatMessages(newChat.id);
       setMessages(newChatMessages);
-      
-      // Reload the original chat to remove the screenshot (reload from database)
-      const originalChatMessages = await window.electronAPI.getChatMessages(currentChat.id);
       
       // Update chats list to include the new chat
       const updatedChats = await window.electronAPI.getChats();
@@ -230,10 +201,16 @@ const App: React.FC = () => {
       // Hide the move option
       setShowMoveToNewChatOption(false);
       
-      console.log('✅ Successfully moved screenshot to new chat:', newChat.title);
+      console.log('✅ Successfully created new chat for screenshot:', newChat.title);
     } catch (error) {
       console.error('❌ Failed to move to new chat:', error);
     }
+  };
+
+  const handleImageRemoved = () => {
+    // Clear the move to new chat option when image is removed
+    setShowMoveToNewChatOption(false);
+    console.log('🗑️ Image removed, clearing move to new chat option');
   };
 
   const createNewChat = async (title?: string): Promise<Chat> => {
@@ -320,7 +297,7 @@ const App: React.FC = () => {
       // Hide move to new chat option when user sends a message
       setShowMoveToNewChatOption(false);
       
-      // Save user message
+      // Create a new message as usual
       const userMessage = await window.electronAPI.saveMessage({
         chatId: currentChat.id,
         role: 'user',
@@ -427,6 +404,7 @@ const App: React.FC = () => {
       onMoveToNewChat={moveToNewChat}
       onSendMessage={sendMessage}
       onUpdateSettings={updateSettings}
+      onImageRemoved={handleImageRemoved}
     />
   );
 };

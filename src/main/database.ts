@@ -192,6 +192,40 @@ class DatabaseService {
     };
   }
 
+  updateMessage(id: number, updates: { content?: string; imagePath?: string }): Message | null {
+    const stmt = this.db.prepare(`
+      UPDATE messages 
+      SET content = COALESCE(?, content),
+          image_path = COALESCE(?, image_path)
+      WHERE id = ?
+    `);
+    
+    const result = stmt.run(updates.content, updates.imagePath, id);
+    
+    if (result.changes === 0) {
+      return null; // Message not found
+    }
+
+    // Get the updated message
+    const getStmt = this.db.prepare(`
+      SELECT * FROM messages WHERE id = ?
+    `);
+    const row = getStmt.get(id) as any;
+    
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      chatId: row.chat_id,
+      role: row.role,
+      content: row.content,
+      imagePath: row.image_path,
+      provider: row.provider,
+      model: row.model,
+      timestamp: row.timestamp
+    };
+  }
+
   getChatMessages(chatId: number): Message[] {
     const stmt = this.db.prepare(`
       SELECT * FROM messages WHERE chat_id = ? ORDER BY timestamp ASC

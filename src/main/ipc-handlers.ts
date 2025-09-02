@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow, shell } from 'electron';
 import { getDatabase } from './database';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -391,6 +391,12 @@ async function testClaudeKey(keyStatus: any) {
     if (error.response?.status === 401) {
       keyStatus.status = 'invalid';
       keyStatus.message = 'Invalid API key';
+    } else if (error.response?.status === 429 || error.response?.data?.error?.type === 'rate_limit_error') {
+      keyStatus.status = 'error';
+      keyStatus.message = 'Rate limit exceeded, try again later';
+    } else if (error.response?.data?.error?.type === 'overloaded_error') {
+      keyStatus.status = 'error';
+      keyStatus.message = 'Claude servers are overloaded, try again later';
     } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       keyStatus.status = 'server_down';
       keyStatus.message = 'Cannot reach Claude servers';
@@ -475,6 +481,10 @@ export function setupIpcHandlers(): void {
   // Message operations
   ipcMain.handle('save-message', async (_event: any, message: any) => {
     return db.saveMessage(message);
+  });
+
+  ipcMain.handle('update-message', async (_event: any, id: number, updates: { content?: string; imagePath?: string }) => {
+    return db.updateMessage(id, updates);
   });
 
   ipcMain.handle('get-chat-messages', async (_event: any, chatId: number) => {
@@ -666,6 +676,56 @@ export function setupIpcHandlers(): void {
     process.env[envVarName] = key;
 
     return true;
+  });
+
+  // External link operations
+  ipcMain.handle('open-external', async (_event: any, url: string) => {
+    await shell.openExternal(url);
+  });
+
+  // Save uploaded image
+  ipcMain.handle('save-uploaded-image', async (_event: any, buffer: Uint8Array, filename: string) => {
+    try {
+      console.log('📁 Saving uploaded image:', filename);
+      
+      // Create uploads directory if it doesn't exist
+      const uploadsDir = path.join(__dirname, '..', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      // Generate unique filename to avoid conflicts
+      const timestamp = Date.now();
+      const ext = path.extname(filename);
+      const nameWithoutExt = path.basename(filename, ext);
+      const uniqueFilename = `${nameWithoutExt}_${timestamp}${ext}`;
+      const filePath = path.join(uploadsDir, uniqueFilename);
+      
+      // Convert Uint8Array to Buffer and save
+      const nodeBuffer = Buffer.from(buffer);
+      fs.writeFileSync(filePath, nodeBuffer);
+      
+      console.log('✅ Uploaded image saved successfully:', filePath);
+      return filePath;
+    } catch (error) {
+      console.error('❌ Failed to save uploaded image:', error);
+      throw error;
+    }
+  });
+
+  // Save edited image
+  ipcMain.handle('save-edited-image', async (_event: any, filePath: string, buffer: Uint8Array) => {
+    try {
+      console.log('💾 Saving edited image:', filePath);
+      // Convert Uint8Array to Buffer for fs.writeFileSync
+      const nodeBuffer = Buffer.from(buffer);
+      fs.writeFileSync(filePath, nodeBuffer);
+      console.log('✅ Edited image saved successfully');
+      return { success: true, path: filePath };
+    } catch (error) {
+      console.error('❌ Failed to save edited image:', error);
+      throw error;
+    }
   });
 
   console.log('✅ setupIpcHandlers() completed successfully');

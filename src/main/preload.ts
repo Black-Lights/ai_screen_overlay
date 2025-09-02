@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveMessage: (message: Omit<Message, 'id' | 'timestamp'>): Promise<Message> => 
     ipcRenderer.invoke('save-message', message),
   
+  updateMessage: (id: number, updates: { content?: string; imagePath?: string }): Promise<Message | null> => 
+    ipcRenderer.invoke('update-message', id, updates),
+  
   getChatMessages: (chatId: number): Promise<Message[]> => 
     ipcRenderer.invoke('get-chat-messages', chatId),
   
@@ -75,6 +78,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   moveWindow: (x: number, y: number): Promise<void> => 
     ipcRenderer.invoke('move-window', x, y),
+
+  // Image editing operations
+  saveEditedImage: (filePath: string, buffer: Uint8Array): Promise<{ success: boolean; path: string }> =>
+    ipcRenderer.invoke('save-edited-image', filePath, buffer),
+  
+  saveUploadedImage: (buffer: Uint8Array, filename: string): Promise<string> =>
+    ipcRenderer.invoke('save-uploaded-image', buffer, filename),
   
   resizeWindow: (width: number, height: number): Promise<void> => 
     ipcRenderer.invoke('resize-window', width, height),
@@ -90,6 +100,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onScreenCaptureError: (callback: (error: string) => void) => {
     ipcRenderer.on('screen-capture-error', (event, error) => callback(error));
   },
+
+  // External link operations
+  openExternal: (url: string): Promise<void> => 
+    ipcRenderer.invoke('open-external', url),
 
   // Selection events (for screen capture overlay)
   selectionComplete: (selection: any) => {

@@ -2,6 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import KaTeX CSS for mathematical formula rendering */
+@import 'katex/dist/katex.min.css';
+
+/* Custom KaTeX styling for dark theme */
+.katex-display {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 1.5rem 0;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.katex-inline {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 0 0.2rem;
+  font-size: 1.1em;
+}
+
+/* Ensure KaTeX formulas are visible in dark theme */
+.katex {
+  color: white !important;
+  font-size: 1.1em !important;
+}
+
+.katex-display .katex {
+  font-size: 1.3em !important;
+}
+
+.katex .mord {
+  color: #f3f4f6 !important;
+}
+
+.katex .mop {
+  color: #34d399 !important;
+}
+
+.katex .mbin {
+  color: #60a5fa !important;
+}
+
+.katex .mrel {
+  color: #fbbf24 !important;
+}
+
+.katex .mopen,
+.katex .mclose {
+  color: #a78bfa !important;
+}
+
+.katex .mpunct {
+  color: #f87171 !important;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -22,8 +80,9 @@
 
 @layer components {
   .glass-panel {
-    @apply backdrop-blur-xl border border-white/30 shadow-2xl rounded-xl;
+    @apply backdrop-blur-xl border border-white/30 shadow-2xl;
     background: rgba(0, 0, 0, 0.7);
+    border-radius: 0;
   }
   
   .glass-button {
@@ -134,9 +193,10 @@
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
-    resize: none;
+    resize: vertical;
     min-height: 50px;
-    max-height: 8rem;
+    max-height: 200px;
+    transition: height 0.2s ease;
   }
   
   .chat-input::placeholder {
@@ -528,4 +588,83 @@ button[class*="bg-white"] .text-white\/60 {
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
+}
+
+/* KaTeX math rendering styles */
+.katex-display {
+  margin: 0.75rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.katex {
+  font-size: 1em !important;
+}
+
+.katex-display .katex {
+  text-align: center;
+}
+
+.katex .katex-html {
+  color: inherit !important;
+}
+
+/* Ensure math formulas are visible on dark backgrounds */
+.markdown-content .katex {
+  color: white !important;
+}
+
+.markdown-content .katex-display .katex {
+  color: white !important;
+}
+
+/* Inline math styling */
+.markdown-content .katex-inline {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  margin: 0 0.125rem;
+}
+
+/* Block math styling */
+.markdown-content .katex-display {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 1rem 0;
+}
+
+/* KaTeX mathematical formula styling */
+.katex {
+  color: inherit !important;
+}
+
+.katex-display {
+  margin: 1rem 0 !important;
+  text-align: center;
+}
+
+.katex .base {
+  color: inherit !important;
+}
+
+/* Make KaTeX formulas more readable in dark theme */
+.markdown-content .katex {
+  color: #ffffff !important;
+}
+
+.markdown-content .katex-display {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Inline math styling */
+.markdown-content .katex:not(.katex-display) {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  margin: 0 0.125rem;
 }
