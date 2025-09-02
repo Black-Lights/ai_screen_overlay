@@ -4,6 +4,7 @@ import ChatInterface from './ChatInterface';
 import ChatHistory from './ChatHistory';
 import LLMSelector from './LLMSelector';
 import { Chat, Message, AppSettings } from '@/shared/types';
+import { BackgroundDetectionService, BackgroundInfo } from '../services/backgroundDetection';
 
 interface OverlayProps {
   currentChat: Chat | null;
@@ -36,12 +37,14 @@ const Overlay: React.FC<OverlayProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [position, setPosition] = useState(settings.overlayPosition);
   const [size, setSize] = useState(settings.overlaySize);
   const [showSettings, setShowSettings] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showLLMSelector, setShowLLMSelector] = useState(false);
   const [apiStatus, setApiStatus] = useState<{
     openai: 'ready' | 'invalid' | 'error' | 'not-configured';
     claude: 'ready' | 'invalid' | 'error' | 'not-configured';
@@ -52,9 +55,14 @@ const Overlay: React.FC<OverlayProps> = ({
     deepseek: 'not-configured',
   });
   const [isCheckingApiStatus, setIsCheckingApiStatus] = useState(false);
+  const [backgroundInfo, setBackgroundInfo] = useState<BackgroundInfo | null>(null);
+  const [currentThemeStyles, setCurrentThemeStyles] = useState<any>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const titleBarRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
+
+  // Initialize background detection service
+  const backgroundDetection = new BackgroundDetectionService();
 
   useEffect(() => {
     setPosition(settings.overlayPosition);
@@ -66,6 +74,43 @@ const Overlay: React.FC<OverlayProps> = ({
       setSize({ width: rect.width || 500, height: rect.height || 700 });
     }
   }, [settings.overlayPosition, settings.overlaySize]);
+
+  // Cancel drag/resize operations when settings panel opens
+  useEffect(() => {
+    if (showSettings) {
+      setIsDragging(false);
+      setIsResizing(false);
+      setResizeDirection(null);
+    }
+  }, [showSettings]);
+
+  // Background detection and theme application
+  useEffect(() => {
+    const updateTheme = async () => {
+      if (settings.adaptiveOpacity) {
+        const bgInfo = await backgroundDetection.detectBackground();
+        setBackgroundInfo(bgInfo);
+      }
+      
+      const theme = settings.theme || 'glassmorphism';
+      const themeStyles = backgroundDetection.getThemeStyles(theme, backgroundInfo || undefined);
+      setCurrentThemeStyles(themeStyles);
+    };
+
+    updateTheme();
+  }, [settings.theme, settings.adaptiveOpacity, backgroundInfo?.brightness]);
+
+  // API status checking
+  useEffect(() => {
+    if (showSettings) {
+      checkApiStatus();
+    }
+  }, [settings.openaiApiKey, settings.claudeApiKey, settings.deepseekApiKey, showSettings]);
+
+  // Check API status initially and when settings change
+  useEffect(() => {
+    checkApiStatus();
+  }, []);
 
   // Check API status when settings change
   useEffect(() => {
@@ -131,6 +176,11 @@ const Overlay: React.FC<OverlayProps> = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Don't handle drag/resize when settings panel is open
+    if (showSettings) {
+      return;
+    }
+    
     if (titleBarRef.current?.contains(e.target as Node)) {
       setIsDragging(true);
       setDragStart({
@@ -149,6 +199,11 @@ const Overlay: React.FC<OverlayProps> = ({
   };
 
   const handleMouseMove = (e: MouseEvent) => {
+    // Don't handle drag/resize when settings panel is open
+    if (showSettings) {
+      return;
+    }
+    
     if (isDragging) {
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
@@ -172,17 +227,24 @@ const Overlay: React.FC<OverlayProps> = ({
   };
 
   const handleMouseUp = () => {
+    // Don't handle drag/resize when settings panel is open
+    if (showSettings) {
+      return;
+    }
+    
     if (isDragging) {
       setIsDragging(false);
       onUpdateSettings({ overlayPosition: position });
     } else if (isResizing) {
       setIsResizing(false);
+      setResizeDirection(null);
       onUpdateSettings({ overlaySize: size });
     }
   };
 
   useEffect(() => {
-    if (isDragging || isResizing) {
+    // Don't add global mouse event listeners when settings panel is open
+    if ((isDragging || isResizing) && !showSettings) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {
@@ -190,7 +252,7 @@ const Overlay: React.FC<OverlayProps> = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, isResizing, dragStart, resizeStart, position, size]);
+  }, [isDragging, isResizing, dragStart, resizeStart, position, size, showSettings]);
 
   const handleMinimize = async () => {
     await window.electronAPI.minimizeWindow();
@@ -209,9 +271,12 @@ const Overlay: React.FC<OverlayProps> = ({
       ref={overlayRef}
       className={`glass-panel animate-fade-in select-none flex flex-col overflow-hidden h-full w-full ${
         isDragging ? 'is-dragging' : ''
-      } ${isResizing ? 'is-resizing' : ''}`}
+      } ${isResizing ? 'is-resizing' : ''} theme-${settings.theme || 'glassmorphism'}`}
       style={{
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+        background: currentThemeStyles?.background || 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+        backdropFilter: currentThemeStyles?.backdropFilter || 'blur(20px)',
+        border: currentThemeStyles?.border || '1px solid rgba(255, 255, 255, 0.1)',
+        color: currentThemeStyles?.textColor || 'white',
       }}
       onMouseDown={handleMouseDown}
     >
@@ -276,14 +341,65 @@ const Overlay: React.FC<OverlayProps> = ({
 
       {/* Content Area */}
       <div className="overlay-content flex-1 min-h-0">
-        {/* LLM Selector */}
-        <div className="overlay-section p-3 border-b border-white/10">
-          <LLMSelector
-            selectedProvider={settings.selectedProvider}
-            settings={settings}
-            onProviderChange={(provider) => onUpdateSettings({ selectedProvider: provider })}
-            onSettingsChange={handleSettingsChange}
-          />
+        {/* LLM Selector - Collapsible */}
+        <div className="overlay-section border-b border-white/10">
+          {!showLLMSelector ? (
+            // Collapsed view - just show provider name and click to expand
+            <div 
+              className="p-3 cursor-pointer hover:bg-white/5 transition-colors bg-black/20 backdrop-blur-sm"
+              onClick={() => setShowLLMSelector(true)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-white/90">
+                    LLM Provider
+                  </span>
+                  <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">
+                    {settings.selectedProvider === 'openai' ? 'OpenAI' : 
+                     settings.selectedProvider === 'claude' ? 'Anthropic' : 'DeepSeek'}
+                  </span>
+                </div>
+                <button className="text-white/40 hover:text-white/60 transition-colors bg-white/10 backdrop-blur-sm p-1 rounded">
+                  <svg className="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Expanded view - full LLM selector with close button
+            <div className="bg-black/20 backdrop-blur-sm">
+              <div className="p-3 border-b border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-white/90">LLM Provider</span>
+                  <button 
+                    className="text-white/40 hover:text-white/60 transition-colors bg-white/10 backdrop-blur-sm p-1 rounded"
+                    onClick={() => setShowLLMSelector(false)}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <LLMSelector
+                selectedProvider={settings.selectedProvider}
+                settings={settings}
+                apiStatus={apiStatus}
+                isCheckingStatus={isCheckingApiStatus}
+                onProviderChange={(provider) => {
+                  onUpdateSettings({ selectedProvider: provider });
+                  // Don't auto-collapse, let user select model first
+                }}
+                onSettingsChange={handleSettingsChange}
+                onModelChange={(model) => {
+                  // Auto-collapse after model selection
+                  setShowLLMSelector(false);
+                }}
+                onRefreshStatus={checkApiStatus}
+              />
+            </div>
+          )}
         </div>
 
         {/* Chat Interface */}
@@ -404,6 +520,53 @@ const Overlay: React.FC<OverlayProps> = ({
                     onChange={(e) => handleApiKeyChange('deepseek', e.target.value)}
                     placeholder="Enter your DeepSeek API key"
                   />
+                </div>
+
+                {/* Appearance Section */}
+                <div className="mt-6 pt-4 border-t border-white/20">
+                  <h3 className={`text-lg font-medium mb-4 ${currentThemeStyles?.textColor || 'text-white'}`} style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>Appearance</h3>
+                  
+                  {/* Theme Selection */}
+                  <div className="mb-4">
+                    <label className={`block text-sm font-medium mb-2 ${currentThemeStyles?.textColor || 'text-white'}`} style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>
+                      Theme
+                    </label>
+                    <select
+                      value={settings.theme || 'glassmorphism'}
+                      onChange={(e) => handleSettingsChange({ theme: e.target.value as 'glassmorphism' | 'dark' | 'light' })}
+                      className="theme-input w-full p-3 rounded border focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/10 border-white/20 text-white"
+                    >
+                      <option value="glassmorphism" className="bg-gray-800 text-white">Glassmorphism (Default)</option>
+                      <option value="dark" className="bg-gray-800 text-white">Dark</option>
+                      <option value="light" className="bg-gray-800 text-white">Light</option>
+                    </select>
+                  </div>
+
+                  {/* Adaptive Opacity */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className={`block text-sm font-medium ${currentThemeStyles?.textColor || 'text-white'}`} style={{textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)'}}>
+                          Adaptive Opacity
+                        </label>
+                        <p className={`text-xs mt-1 ${currentThemeStyles?.secondaryText || 'text-white/60'}`}>
+                          Automatically adjust opacity based on background
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleSettingsChange({ adaptiveOpacity: !settings.adaptiveOpacity })}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                          settings.adaptiveOpacity ? 'bg-blue-600' : 'bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            settings.adaptiveOpacity ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 

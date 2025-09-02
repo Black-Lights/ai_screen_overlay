@@ -196,8 +196,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <img
                       src={`file://${message.imagePath}`}
                       alt="Captured screen"
-                      className="max-w-full h-auto rounded border"
-                      style={{ maxHeight: '200px' }}
+                      className="max-w-full h-auto rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{ maxHeight: '120px', maxWidth: '200px' }}
+                      title="Click to view full size"
                     />
                   </div>
                 )}

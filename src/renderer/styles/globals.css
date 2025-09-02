@@ -49,6 +49,53 @@
     padding: 0.5rem 0.75rem;
     color: white;
   }
+
+  /* Theme-aware input styles */
+  .theme-input {
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .theme-input:focus {
+    ring: 2px;
+    ring-color: rgba(59, 130, 246, 0.5);
+  }
+
+  /* Light theme inputs */
+  .theme-light .theme-input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #1f2937;
+  }
+
+  .theme-light .theme-input::placeholder {
+    color: #6b7280;
+  }
+
+  /* Dark theme inputs */
+  .theme-dark .theme-input {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .theme-dark .theme-input::placeholder {
+    color: #9ca3af;
+  }
+
+  /* Glassmorphism theme inputs */
+  .theme-glassmorphism .theme-input {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+  }
+
+  .theme-glassmorphism .theme-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
   
   .glass-input::placeholder {
     color: rgba(255, 255, 255, 0.7);
