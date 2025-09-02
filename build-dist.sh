@@ -3,12 +3,22 @@
 # AI Screen Overlay - Distribution Builder
 # Builds distributable packages for Windows, macOS, and Linux
 
+# Handle clean-all option
+if [ "$1" = "clean-all" ]; then
+    echo "🧹 Performing full clean (including icons and release packages)..."
+    rm -rf dist build release node_modules/.cache
+    echo "✅ Full clean completed!"
+    exit 0
+fi
+
 echo "🚀 Building AI Screen Overlay distributions..."
 
-# Clean previous builds
+# Clean previous builds (preserve icons and existing release packages)
 echo "🧹 Cleaning previous builds..."
-npm run clean
-rm -rf release/
+# Only clean dist and cache, preserve build/ icons and release/ packages
+rm -rf dist node_modules/.cache
+# Create directories if they don't exist
+mkdir -p build release
 
 # Install dependencies if needed
 if [ ! -d "node_modules" ]; then
@@ -54,7 +64,15 @@ elif [ "$1" = "portable" ]; then
     npm run dist:portable
 else
     echo "❌ Unknown platform: $1"
-    echo "Usage: ./build-dist.sh [all|win|mac|linux|portable]"
+    echo "Usage: ./build-dist.sh [all|win|mac|linux|portable|clean-all]"
+    echo ""
+    echo "Options:"
+    echo "  all       - Build for all platforms"
+    echo "  win       - Build for Windows only"
+    echo "  mac       - Build for macOS only"
+    echo "  linux     - Build for Linux only"
+    echo "  portable  - Build portable versions only"
+    echo "  clean-all - Full clean (removes icons and release packages)"
     exit 1
 fi
 

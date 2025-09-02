@@ -25,7 +25,7 @@
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && electron-builder --linux",
     "dist:portable": "npm run build && electron-builder --win portable --mac dmg --linux AppImage",
-    "clean": "rm -rf dist build node_modules/.cache",
+    "clean": "rm -rf dist node_modules/.cache && find build -name '*.png' -o -name '*.ico' -o -name '*.icns' | grep -v 'icon\\.' | xargs rm -f",
     "start": "npm run build && electron dist/main/main/main.js",
     "package": "npm run build && electron-builder --publish=never",
     "test": "jest",
@@ -116,8 +116,7 @@
         {
           "target": "nsis",
           "arch": [
-            "x64",
-            "ia32"
+            "x64"
           ]
         },
         {
