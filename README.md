@@ -31,21 +31,31 @@ A powerful AI-powered screen capture and chat overlay application built with Ele
 - **Context Awareness**: Full conversation context maintained across messages
 - **Move Screenshots**: Transfer screenshots between chats with one click
 
-### 🎨 **Modern Interface**
-- **Glassmorphism Design**: Beautiful translucent overlay with blur effects
+### 🎨 **Modern Interface & Theming**
+- **Dynamic Theme System**: Three distinct themes - Glassmorphism (Default), Dark, and Light
+- **Adaptive Opacity**: Automatically adjusts transparency based on system theme detection
+- **Glassmorphism Design**: Beautiful translucent overlay with blur effects and gradient backgrounds
+- **Smart Background Detection**: System theme awareness for optimal visibility
 - **Always On Top**: Stays accessible while you work on other applications
-- **Drag & Resize**: Repositionable and resizable overlay window
-- **Enhanced Contrast**: Optimized readability on any background with text shadows
+- **Drag & Resize**: Repositionable and resizable overlay window with smooth interactions
+- **Enhanced Contrast**: Optimized readability on any background with text shadows and adaptive styling
 - **Responsive Layout**: Adapts to different screen sizes and orientations
-- **Professional Styling**: Dark theme with purple gradients and smooth animations
+- **Professional Styling**: Multiple theme options with purple gradients and smooth animations
+- **Settings Panel**: Modern modal interface with theme selection and opacity controls
 
 ## 📋 System Requirements
 
-- **Operating System**: Linux (Ubuntu 20.04+ recommended)
-- **Node.js**: Version 18.0.0 or higher
-- **Memory**: 4GB RAM minimum, 8GB recommended
-- **Display**: X11 or Wayland with screen capture permissions
-- **Network**: Internet connection for AI API access
+## 📋 System Requirements
+
+- **Operating System**: Windows, macOS, or Linux
+- **Node.js**: Version 16 or higher
+- **npm**: Version 8 or higher (comes with Node.js)
+- **Python**: Version 3.7 or higher (for AI processing)
+- **Git**: For version control and repository management
+- **Display Resolution**: Minimum 1024x768 (HD or higher recommended)
+- **GPU**: Hardware acceleration support recommended for smooth overlay rendering
+- **Memory**: Minimum 4GB RAM (8GB+ recommended for AI processing)
+- **System Theme Support**: Windows 10/11, macOS 10.14+, or Linux desktop environments with dark/light theme detection
 
 ## � Quick Start
 
@@ -163,7 +173,15 @@ DEEPSEEK_API_KEY=your-deepseek-key-here
 - **Status Monitoring**: Green/red indicators show real-time API connectivity
 - **Provider Switching**: Change providers mid-conversation as needed
 
-## � Latest Features (v2.0)
+## � Latest Features (v2.1)
+
+### 🎨 **Advanced Theme System**
+- **Multiple Themes**: Choose from Glassmorphism (Default), Dark, and Light themes
+- **Adaptive Opacity**: Automatic transparency adjustment based on system theme detection
+- **Background Detection Service**: Smart system theme awareness using CSS media queries
+- **Dynamic Styling**: Real-time theme switching with optimized opacity for light/dark backgrounds
+- **Enhanced Readability**: 95% opacity on light backgrounds, 85% on dark backgrounds for optimal contrast
+- **Settings Integration**: Easy theme selection and adaptive opacity toggle in settings panel
 
 ### ✨ **Smart Screen Capture Workflow**
 - Screenshots are automatically added to your current conversation
@@ -307,14 +325,30 @@ CREATE TABLE settings (
 
 ### Development Setup
 ```bash
-# Install dependencies
+# Clone repository
+git clone https://github.com/your-username/ai-screen-overlay.git
+cd ai-screen-overlay
+
+# Install Node.js dependencies
 npm install
+
+# Install Python dependencies (for AI processing)
+pip install -r requirements.txt
+
+# Setup environment variables
+cp .env.example .env
+nano .env  # Add your API keys
 
 # Start development mode
 npm run dev          # Starts both Electron and React dev servers
 npm run dev:react    # React development server only
 npm run dev:electron # Electron development mode only
 ```
+
+### Dependency Files
+- **`node-requirements.txt`**: Complete list of Node.js packages with versions
+- **`requirements.txt`**: Python packages for AI processing and image handling
+- **`package.json`**: NPM configuration with all development and runtime dependencies
 
 ### Build Commands
 ```bash
@@ -429,7 +463,7 @@ tail -f electron-debug.log
 - [ ] **Export Options**: PDF, HTML conversation export
 - [ ] **Voice Input**: Speech-to-text integration
 - [ ] **Cloud Sync**: Optional cloud backup (encrypted)
-- [ ] **Themes**: Dark/light theme options
+- [x] **Themes**: Advanced theme system with Glassmorphism, Dark, and Light options
 - [ ] **Annotations**: Draw on captured images
 - [ ] **OCR**: Text extraction from images
 

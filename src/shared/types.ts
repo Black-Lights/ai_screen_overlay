@@ -37,11 +37,14 @@ export interface AppSettings {
   claudeApiKey?: string;
   deepseekApiKey?: string;
   selectedProvider: string;
+  selectedModel?: string;
   selectedModels?: {
     openai?: string;
     claude?: string;
     deepseek?: string;
   };
+  theme?: 'glassmorphism' | 'dark' | 'light';
+  adaptiveOpacity?: boolean;
   overlayPosition: {
     x: number;
     y: number;
