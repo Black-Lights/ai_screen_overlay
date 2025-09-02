@@ -2,7 +2,7 @@
   "name": "ai-screen-overlay",
   "version": "1.0.0",
   "description": "AI-powered screen capture and chat overlay with multi-LLM support",
-  "main": "dist/main/main.js",
+  "main": "dist/main/main/main.js",
   "author": "AI Screen Overlay Team",
   "license": "MIT",
   "homepage": "./",
@@ -14,6 +14,11 @@
     "build:react": "webpack --mode production",
     "build:electron": "tsc -p src/main/tsconfig.json && tsc src/main/preload.ts --outDir dist/main --target ES2020 --module CommonJS --esModuleInterop --allowSyntheticDefaultImports",
     "dist": "npm run build && electron-builder",
+    "dist:all": "npm run build && electron-builder --publish=never --win --mac --linux",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac", 
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:portable": "npm run build && electron-builder --win portable --mac dmg --linux AppImage",
     "clean": "rm -rf dist build node_modules/.cache",
     "start": "npm run build && electron dist/main/main/main.js",
     "package": "npm run build && electron-builder --publish=never",
@@ -70,35 +75,139 @@
   "build": {
     "appId": "com.aioverlay.app",
     "productName": "AI Screen Overlay",
+    "copyright": "Copyright © 2025 AI Screen Overlay Team",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules",
+      "!src",
+      "!docs",
+      "!.git"
     ],
+    "extraResources": [
+      {
+        "from": ".env.example",
+        "to": ".env.example"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "publisherName": "AI Screen Overlay Team"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
     "linux": {
       "target": [
         {
           "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         },
         {
           "target": "snap",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         },
         {
           "target": "deb",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
         }
       ],
-      "category": "Utility"
+      "icon": "build/icon.png",
+      "category": "Utility",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "desktop": {
+        "Name": "AI Screen Overlay",
+        "Comment": "AI-powered screen capture and chat overlay",
+        "Categories": "Utility;Graphics;Office;",
+        "Keywords": "AI;Screenshot;Chat;Overlay;Assistant;"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AI Screen Overlay",
+      "include": "build/installer.nsh"
+    },
+    "dmg": {
+      "background": "build/dmg-background.png",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "snap": {
+      "summary": "AI-powered screen capture and chat overlay with multi-LLM support",
+      "description": "Modern desktop application for AI-powered screen analysis with support for multiple language models including GPT-4, Claude, and DeepSeek.",
+      "grade": "stable",
+      "confinement": "strict",
+      "plugs": [
+        "default",
+        "desktop",
+        "desktop-legacy",
+        "home",
+        "x11",
+        "unity7",
+        "browser-support",
+        "network",
+        "gsettings",
+        "pulseaudio",
+        "opengl"
+      ]
     }
   }
 }

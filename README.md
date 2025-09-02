@@ -365,6 +365,53 @@ npm run type-check     # TypeScript validation
 npm test              # Run test suite
 ```
 
+## 📦 Distribution & Deployment
+
+### Quick Distribution
+
+**For end users**: Download ready-to-run apps:
+- **Linux**: `AI-Screen-Overlay-1.0.0-x86_64.AppImage` - Works on all distributions
+- **Windows**: `AI-Screen-Overlay-Setup-1.0.0.exe` - Standard installer
+- **macOS**: `AI-Screen-Overlay-1.0.0.dmg` - Drag to Applications
+
+### Building Distributions
+
+Create installable applications for all platforms:
+
+```bash
+# Setup app icons (first time only)
+./setup-icons.sh
+
+# Build for all platforms (Windows, macOS, Linux)
+./build-dist.sh all
+
+# Build for specific platforms
+./build-dist.sh win      # Windows installer + portable
+./build-dist.sh mac      # macOS DMG + ZIP
+./build-dist.sh linux    # AppImage, DEB, RPM, Snap
+./build-dist.sh portable # Portable versions only
+```
+
+**📋 See [DISTRIBUTION.md](DISTRIBUTION.md) for complete distribution guide**
+
+### Distribution Formats Created
+
+#### **Windows** 🪟
+- **`.exe` Installer (NSIS)**: Full installer with Start Menu shortcuts
+- **`.exe` Portable**: No installation required, run directly
+- **Features**: Desktop shortcuts, auto-updater, uninstaller
+
+#### **macOS** 🍎  
+- **`.dmg` Installer**: Standard macOS app installer
+- **Universal Binary**: Supports both Intel (x64) and Apple Silicon (arm64)
+- **Features**: Code signing ready, Gatekeeper compatible
+
+#### **Linux** 🐧
+- **`.AppImage`**: Portable, runs on any Linux distribution ⭐ **Recommended**
+- **`.deb` Package**: For Debian/Ubuntu systems (apt install)
+- **`.rpm` Package**: For RedHat/Fedora systems (yum/dnf install) 
+- **`.snap` Package**: Universal Linux package (snap install)
+
 ### Adding New Features
 
 #### New AI Provider
