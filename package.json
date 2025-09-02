@@ -1,6 +1,6 @@
 {
   "name": "ai-screen-overlay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered screen capture and chat overlay with multi-LLM support",
   "main": "dist/main/main/main.js",
   "author": {
@@ -252,9 +252,11 @@
         "unity7",
         "browser-support",
         "network",
+        "network-bind",
         "gsettings",
         "pulseaudio",
-        "opengl"
+        "opengl",
+        "process-control"
       ]
     }
   }
