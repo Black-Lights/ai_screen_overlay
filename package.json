@@ -85,7 +85,7 @@
   },
   "build": {
     "appId": "com.aioverlay.app",
-    "productName": "AI Screen Overlay",
+    "productName": "AI-Screen-Overlay",
     "copyright": "Copyright © 2025 AI Screen Overlay Team",
     "directories": {
       "output": "release",
@@ -214,6 +214,7 @@
       "icon": "build/icon.png",
       "category": "Utility",
       "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "executableName": "ai-screen-overlay",
       "desktop": {
         "Name": "AI Screen Overlay",
         "Comment": "AI-powered screen capture and chat overlay",
