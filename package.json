@@ -1,7 +1,7 @@
 {
   "name": "ai-screen-overlay",
-  "version": "1.0.2",
-  "description": "AI-powered screen capture and chat overlay with multi-LLM support",
+  "version": "1.1.0",
+  "description": "AI-powered screen capture and chat overlay with multi-LLM support and comprehensive cost tracking",
   "main": "dist/main/main/main.js",
   "author": {
     "name": "AI Screen Overlay Team",

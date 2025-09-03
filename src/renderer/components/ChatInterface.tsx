@@ -5,9 +5,10 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Chat, Message } from '@/shared/types';
+import { Chat, Message, AppSettings } from '@/shared/types';
 import { AVAILABLE_MODELS } from '@/shared/models';
 import { ImageCanvas } from './ImageCanvas';
+import TokenCounter from './TokenCounter';
 
 // Helper function to extract text content from React children
 const extractTextFromChildren = (children: any): string => {
@@ -31,9 +32,15 @@ interface ChatInterfaceProps {
   onMoveToNewChat: () => void;
   provider: string;
   showZoomControls: boolean;
-  zoomControlsRef?: React.RefObject<HTMLDivElement>;
-  onImageRemoved?: () => void;
+  zoomControlsRef: React.RefObject<HTMLDivElement>;
+  onImageRemoved: () => void;
+  settings: AppSettings;
 }
+
+// Utility function to calculate total cost from messages
+const calculateTotalCostFromMessages = (messages: Message[]): number => {
+  return messages.reduce((total, msg) => total + (msg.actualCost || 0), 0);
+};
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentChat,
@@ -45,6 +52,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   showZoomControls,
   zoomControlsRef,
   onImageRemoved,
+  settings,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -53,6 +61,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionMessage, setCompressionMessage] = useState<{
+    text: string;
+    type: 'success' | 'info' | 'error';
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -252,6 +265,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleCompressChatHistory = async () => {
+    if (!currentChat?.id) return;
+    
+    setIsCompressing(true);
+    setCompressionMessage(null);
+    
+    try {
+      const result = await window.electronAPI.compressChatHistory(currentChat.id);
+      
+      if (result.success) {
+        setCompressionMessage({
+          text: `Chat history compressed! Deleted ${result.deletedCount} old messages, saved ~${result.savedTokens} tokens.`,
+          type: 'success'
+        });
+        // Refresh the chat to show updated messages
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        setCompressionMessage({
+          text: result.reason || 'No compression needed',
+          type: 'info'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to compress chat history:', error);
+      setCompressionMessage({
+        text: 'Failed to compress chat history',
+        type: 'error'
+      });
+    } finally {
+      setIsCompressing(false);
+      setTimeout(() => setCompressionMessage(null), 5000);
+    }
+  };
+
   const preprocessMathContent = (content: string) => {
     // Convert LaTeX delimiters to markdown math format that remark-math can handle
     return content
@@ -435,6 +484,78 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Chat Info Bar with Token Counter */}
+      {currentChat && (
+        <div className="flex justify-between items-center p-2 border-b border-white/10 bg-black/20">
+          <div className="flex items-center space-x-4">
+            {settings.tokenOptimization?.showTokenCounter && (
+              <TokenCounter 
+                currentChat={currentChat}
+                messages={messages}
+                provider={provider}
+                model={settings.selectedModels?.[provider] || 'default'}
+                showCost={settings.tokenOptimization?.showCostEstimator || false}
+                className="flex-shrink-0"
+              />
+            )}
+            {settings.tokenOptimization?.showCostEstimator && (
+              (() => {
+                // Calculate dynamic total cost from messages
+                const dynamicTotalCost = calculateTotalCostFromMessages(messages);
+                const displayCost = dynamicTotalCost || currentChat?.totalCost || 0;
+                
+                return displayCost > 0 ? (
+                  <div className="text-xs text-blue-400 flex items-center space-x-1 flex-shrink-0" title={`Total cost spent on this chat so far (${messages.filter(m => m.actualCost && m.actualCost > 0).length} paid messages)`}>
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
+                    </svg>
+                    <span>Spent: ${displayCost.toFixed(4)}</span>
+                  </div>
+                ) : null;
+              })()
+            )}
+            {messages.length > 5 && (
+              <button
+                onClick={handleCompressChatHistory}
+                disabled={isCompressing}
+                className="text-xs px-2 py-1 rounded hover:bg-white/20 transition-colors text-white/60 hover:text-white disabled:opacity-50 flex items-center space-x-1"
+                title="Manually compress chat history by summarizing old messages to save tokens and costs for future messages"
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+                </svg>
+                <span>{isCompressing ? 'Compressing...' : 'Compress'}</span>
+              </button>
+            )}
+          </div>
+          
+          {compressionMessage && (
+            <div className={`text-xs px-2 py-1 rounded max-w-xs flex items-center space-x-1 ${
+              compressionMessage.type === 'success' ? 'text-green-300 bg-green-500/20' :
+              compressionMessage.type === 'error' ? 'text-red-300 bg-red-500/20' :
+              'text-blue-300 bg-blue-500/20'
+            }`}>
+              {compressionMessage.type === 'success' && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+              )}
+              {compressionMessage.type === 'error' && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                </svg>
+              )}
+              {compressionMessage.type === 'info' && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                </svg>
+              )}
+              <span>{compressionMessage.text}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Collapsible Zoom Controls */}
       {showZoomControls && (
         <div ref={zoomControlsRef} className="flex justify-end items-center p-2 border-b border-white/10 bg-black/20">

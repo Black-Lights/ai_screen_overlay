@@ -1,8 +1,24 @@
 # AI Screen Overlay
 
-A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4o, Claude 3.7 Sonnet, and DeepSeek with full markdown rendering, intelligent chat management, and professional conversation features.
+A powerful AI-powered screen capture and chat overlay application built with Electron, React, and TypeScript. Capture any area of your screen and analyze it with multiple AI providers including OpenAI GPT-4o, Claude 3.7 Sonnet, and DeepSeek with comprehensive cost tracking, intelligent token optimization, and professional conversation features.
 
-## Key Features
+## 🌟 Key Features
+
+### 💰 **NEW: Comprehensive Cost Tracking System**
+- **Accurate Model Pricing**: Precise pricing for 40+ AI models across all providers
+  - OpenAI: Standard, Batch, Flex, and Priority tiers
+  - Claude: Sonnet, Haiku, and Opus models with tier-based pricing
+  - DeepSeek: V2, V2.5, Chat, and Coder models
+- **Real-time Cost Display**: Live cost updates in chat interface and history
+- **Mixed-Model Support**: Track costs accurately when switching models mid-conversation
+- **Cost Transparency**: See exactly what each message costs based on actual usage
+- **Optimization Tracking**: Records which token optimization strategy was used
+
+### 🎨 **NEW: Professional User Interface**
+- **SVG Icon System**: Professional scalable icons throughout the application
+- **Enhanced About Section**: Comprehensive app information with dynamic version display
+- **Professional Settings**: Clean, enterprise-ready interface design
+- **Status Indicators**: Real-time feedback with professional status badges
 
 ### Advanced Screen Capture & Image Input
 - **Global Hotkey**: Press `Ctrl+Shift+S` anywhere to capture screen areas
@@ -153,36 +169,32 @@ DEEPSEEK_API_KEY=your-deepseek-key-here
 | `Esc` | Cancel screen capture / Cancel chat rename |
 | `Ctrl+C` | Copy selected text |
 
-## Latest Features (v2.2)
+## Latest Features (v1.1.0) - 🚀 Major Update
 
-### Complete Image Workflow
-- **File Upload Support**: Browse and upload images directly from file system
-- **Clipboard Integration**: Full clipboard paste support with `Ctrl+V` hotkey
-- **Universal Image Editing**: All uploaded, pasted, and captured images work with canvas editor
-- **Format Validation**: Smart file type and size validation with user feedback
-- **Seamless Integration**: All image sources work identically in chat workflow
+### 💰 Comprehensive Cost Tracking
+- **Accurate Billing**: See exactly what each message costs based on the actual model used
+- **40+ Model Support**: Precise pricing for OpenAI (4 tiers), Claude, and DeepSeek models
+- **Real-time Updates**: Dynamic cost calculation and display in chat interface
+- **Cost History**: Complete cost tracking across all conversations
+- **Mixed-Model Support**: Accurate cost calculation when switching models mid-conversation
 
-### Advanced Canvas Editor
-- **Professional Drawing Tools**: Pen and eraser with customizable properties
-- **Color Palette**: Full color selection with opacity controls
-- **Brush Size Control**: Variable brush sizes for precise annotations
-- **Undo/Redo System**: ImageData-based history tracking for reliable state management
-- **Responsive Design**: Fully responsive canvas that works on all screen sizes
-- **Real-time Updates**: Smooth drawing performance with optimized rendering
+### 🎨 Professional UI Overhaul
+- **SVG Icon System**: Replaced all emojis with professional scalable icons
+- **Enhanced About Section**: Dynamic version display and comprehensive app information
+- **Enterprise-Ready**: Professional appearance suitable for business environments
+- **Consistent Design**: Color-coded features with semantic iconography
 
-### Enhanced User Experience
-- **Smart Paste Detection**: Automatic image detection from clipboard
-- **Error Handling**: Comprehensive error messages and recovery
-- **File Validation**: Size limits and format checking with clear feedback
-- **Keyboard Integration**: Full keyboard support for common operations
-- **Visual Feedback**: Tooltips and hover states for all interactive elements
+### 🚀 Token Optimization Enhancements
+- **Smart Cost Estimation**: Comprehensive cost disclaimers and accuracy improvements
+- **Dynamic Token Counter**: Auto-updating with real-time cost calculations
+- **Optimization Tracking**: Database records of optimization methods used per message
+- **Performance Insights**: Clear indication of applied optimization strategies
 
-### Technical Improvements
-- **IPC Architecture**: Robust Inter-Process Communication for image handling
-- **File Management**: Automatic file organization with unique naming
-- **Memory Optimization**: Efficient image processing and cleanup
-- **Cross-Platform Support**: Works consistently across Windows, macOS, and Linux
-- **Security**: Proper input validation and secure file handling
+### 🛠️ Technical Improvements
+- **Windows Compatibility**: Fixed API key storage for Windows installer builds
+- **Database Enhancements**: Added comprehensive cost tracking schema
+- **Build System**: Improved webpack configuration and asset handling
+- **Error Handling**: Enhanced stability and error recovery
 
 ## Technical Architecture
 

@@ -15,6 +15,9 @@ interface Message {
   provider?: string;
   model?: string;
   timestamp: string;
+  optimizationMethod?: string; // Track which optimization was used when sending
+  actualInputTokens?: number; // Actual tokens sent to API
+  actualCost?: number; // Actual cost of this message
 }
 
 interface AppSettings {
@@ -22,6 +25,11 @@ interface AppSettings {
   claudeApiKey?: string;
   deepseekApiKey?: string;
   selectedProvider: string;
+  selectedModels?: {
+    openai?: string;
+    claude?: string;
+    deepseek?: string;
+  };
   overlayPosition: {
     x: number;
     y: number;
@@ -29,6 +37,14 @@ interface AppSettings {
   overlaySize: {
     width: number;
     height: number;
+  };
+  tokenOptimization?: {
+    strategy: 'full-history' | 'rolling-window' | 'smart-summary' | 'rolling-with-summary';
+    rollingWindowSize: number;
+    summaryThreshold: number;
+    showTokenCounter: boolean;
+    showCostEstimator: boolean;
+    autoSuggestOptimization: boolean;
   };
 }
 
@@ -58,9 +74,18 @@ export interface ElectronAPI {
   getChatMessages: (chatId: number) => Promise<Message[]>;
   deleteMessage: (id: number) => Promise<void>;
   
-  // Settings
+    // Settings operations
   getSettings: () => Promise<AppSettings>;
   saveSettings: (settings: Partial<AppSettings>) => Promise<void>;
+  
+  // Token optimization operations
+  estimateChatTokens: (chatId: number) => Promise<{
+    totalTokens: number;
+    messageCount: number;
+    estimatedCost: number;
+  }>;
+  getOptimizationPreview: (chatId: number) => Promise<any>;
+  compressChatHistory: (chatId: number) => Promise<any>;
   
   // AI operations
   sendAIMessage: (params: {
@@ -71,6 +96,24 @@ export interface ElectronAPI {
     chatId?: number;
     modelId?: string;
   }) => Promise<{content: string, provider: string, model: string}>;
+  
+  sendAIMessageWithTracking: (params: {
+    text: string;
+    imagePath?: string;
+    provider: string;
+    apiKey: string;
+    chatId?: number;
+    modelId?: string;
+    optimizationMethod?: string;
+  }) => Promise<{
+    content: string;
+    provider: string;
+    model: string;
+    actualCost: number;
+    optimizationUsed: string;
+    actualInputTokens: number;
+    totalCost: number;
+  }>;
   
   // API Key management
   getApiKeysStatus: () => Promise<{
@@ -98,6 +141,9 @@ export interface ElectronAPI {
   // External link operations
   openExternal: (url: string) => Promise<void>;
 
+  // App information
+  getAppVersion: () => Promise<string>;
+
   // Selection events (for screen capture overlay)
   selectionComplete: (selection: any) => void;
   selectionCancel: () => void;
@@ -107,6 +153,32 @@ declare global {
   interface Window {
     electronAPI: ElectronAPI;
   }
+}
+
+// Module declarations for asset imports
+declare module "*.png" {
+  const value: string;
+  export default value;
+}
+
+declare module "*.jpg" {
+  const value: string;
+  export default value;
+}
+
+declare module "*.jpeg" {
+  const value: string;
+  export default value;
+}
+
+declare module "*.gif" {
+  const value: string;
+  export default value;
+}
+
+declare module "*.svg" {
+  const value: string;
+  export default value;
 }
 
 export {};

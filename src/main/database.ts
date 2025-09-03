@@ -83,6 +83,64 @@ class DatabaseService {
       }
     }
 
+    // Add optimization tracking columns
+    console.log('🔄 Checking for optimization tracking column migration...');
+    try {
+      this.db.exec('ALTER TABLE messages ADD COLUMN optimization_method TEXT');
+      console.log('✅ Added optimization_method column to messages table');
+    } catch (error: any) {
+      if (error.message && error.message.includes('duplicate column name')) {
+        console.log('✅ Optimization method column already exists');
+      } else {
+        console.log('⚠️ Error adding optimization method column:', error.message);
+      }
+    }
+
+    try {
+      this.db.exec('ALTER TABLE messages ADD COLUMN actual_input_tokens INTEGER DEFAULT 0');
+      console.log('✅ Added actual_input_tokens column to messages table');
+    } catch (error: any) {
+      if (error.message && error.message.includes('duplicate column name')) {
+        console.log('✅ Input tokens column already exists');
+      } else {
+        console.log('⚠️ Error adding input tokens column:', error.message);
+      }
+    }
+
+    try {
+      this.db.exec('ALTER TABLE messages ADD COLUMN actual_cost REAL DEFAULT 0.0');
+      console.log('✅ Added actual_cost column to messages table');
+    } catch (error: any) {
+      if (error.message && error.message.includes('duplicate column name')) {
+        console.log('✅ Cost column already exists');
+      } else {
+        console.log('⚠️ Error adding cost column:', error.message);
+      }
+    }
+
+    // Add chat-level cost tracking
+    try {
+      this.db.exec('ALTER TABLE chats ADD COLUMN total_cost REAL DEFAULT 0.0');
+      console.log('✅ Added total_cost column to chats table');
+    } catch (error: any) {
+      if (error.message && error.message.includes('duplicate column name')) {
+        console.log('✅ Total cost column already exists');
+      } else {
+        console.log('⚠️ Error adding total cost column:', error.message);
+      }
+    }
+
+    try {
+      this.db.exec('ALTER TABLE chats ADD COLUMN message_count INTEGER DEFAULT 0');
+      console.log('✅ Added message_count column to chats table');
+    } catch (error: any) {
+      if (error.message && error.message.includes('duplicate column name')) {
+        console.log('✅ Message count column already exists');
+      } else {
+        console.log('⚠️ Error adding message count column:', error.message);
+      }
+    }
+
     console.log('⚙️ Creating settings table...');
     // Create settings table
     this.db.exec(`
@@ -125,7 +183,9 @@ class DatabaseService {
       id: row.id,
       title: row.title,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
+      totalCost: row.total_cost || 0,
+      messageCount: row.message_count || 0
     }));
   }
 
@@ -141,7 +201,9 @@ class DatabaseService {
       id: row.id,
       title: row.title,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
+      totalCost: row.total_cost || 0,
+      messageCount: row.message_count || 0
     };
   }
 
@@ -162,8 +224,8 @@ class DatabaseService {
   // Message operations
   saveMessage(message: Omit<Message, 'id' | 'timestamp'>): Message {
     const stmt = this.db.prepare(`
-      INSERT INTO messages (chat_id, role, content, image_path, provider, model)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO messages (chat_id, role, content, image_path, provider, model, optimization_method, actual_input_tokens, actual_cost)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     const result = stmt.run(
@@ -172,14 +234,21 @@ class DatabaseService {
       message.content,
       message.imagePath || null,
       message.provider || null,
-      message.model || null
+      message.model || null,
+      message.optimizationMethod || null,
+      message.actualInputTokens || 0,
+      message.actualCost || 0.0
     );
 
-    // Update chat's updated_at timestamp
+    // Update chat's updated_at timestamp and cost tracking
     const updateChatStmt = this.db.prepare(`
-      UPDATE chats SET updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      UPDATE chats 
+      SET updated_at = CURRENT_TIMESTAMP, 
+          total_cost = total_cost + ?,
+          message_count = message_count + 1
+      WHERE id = ?
     `);
-    updateChatStmt.run(message.chatId);
+    updateChatStmt.run(message.actualCost || 0.0, message.chatId);
 
     return {
       id: result.lastInsertRowid as number,
@@ -189,6 +258,9 @@ class DatabaseService {
       imagePath: message.imagePath,
       provider: message.provider,
       model: message.model,
+      optimizationMethod: message.optimizationMethod,
+      actualInputTokens: message.actualInputTokens,
+      actualCost: message.actualCost,
       timestamp: new Date().toISOString()
     };
   }
@@ -241,8 +313,51 @@ class DatabaseService {
       imagePath: row.image_path,
       provider: row.provider,
       model: row.model,
+      optimizationMethod: row.optimization_method,
+      actualInputTokens: row.actual_input_tokens,
+      actualCost: row.actual_cost,
       timestamp: row.timestamp
     }));
+  }
+
+  getOptimizedChatMessages(chatId: number): Message[] {
+    const allMessages = this.getChatMessages(chatId);
+    const settings = this.getSettings();
+    
+    // Import token optimizer functions dynamically
+    let applyRollingWindow, applySmartSummary, applyRollingWithSummary;
+    try {
+      const optimizer = require('../shared/token-optimizer');
+      applyRollingWindow = optimizer.applyRollingWindow;
+      applySmartSummary = optimizer.applySmartSummary;
+      applyRollingWithSummary = optimizer.applyRollingWithSummary;
+    } catch (error) {
+      console.error('Failed to load token optimizer:', error);
+      return allMessages; // Fallback to full history
+    }
+    
+    const { strategy, rollingWindowSize, summaryThreshold } = settings.tokenOptimization;
+    
+    switch (strategy) {
+      case 'full-history':
+        return allMessages;
+        
+      case 'rolling-window':
+        return applyRollingWindow(allMessages, rollingWindowSize).messages;
+        
+      case 'smart-summary':
+        return applySmartSummary(allMessages, summaryThreshold).messages;
+        
+      case 'rolling-with-summary':
+        return applyRollingWithSummary(
+          allMessages, 
+          rollingWindowSize, 
+          summaryThreshold
+        ).messages;
+        
+      default:
+        return applyRollingWithSummary(allMessages, 15, 5000).messages;
+    }
   }
 
   deleteMessage(id: number): void {
@@ -289,7 +404,15 @@ class DatabaseService {
       deepseekApiKey: settings.deepseekApiKey || process.env.DEEPSEEK_API_KEY || '',
       selectedProvider: settings.selectedProvider || 'openai',
       overlayPosition: settings.overlayPosition || { x: 100, y: 100 },
-      overlaySize: settings.overlaySize || { width: 500, height: 700 }
+      overlaySize: settings.overlaySize || { width: 500, height: 700 },
+      tokenOptimization: settings.tokenOptimization || {
+        strategy: 'rolling-with-summary',
+        rollingWindowSize: 15,
+        summaryThreshold: 5000,
+        showTokenCounter: true,
+        showCostEstimator: false,
+        autoSuggestOptimization: true
+      }
     };
   }
 

@@ -43,10 +43,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Settings operations
   getSettings: (): Promise<AppSettings> => 
     ipcRenderer.invoke('get-settings'),
-  
+
   saveSettings: (settings: Partial<AppSettings>): Promise<void> => 
     ipcRenderer.invoke('save-settings', settings),
-
+  
+  // Token optimization operations
+  estimateChatTokens: (chatId: number) => 
+    ipcRenderer.invoke('estimate-chat-tokens', chatId),
+    
+  getOptimizationPreview: (chatId: number) =>
+    ipcRenderer.invoke('get-optimization-preview', chatId),
+    
+  compressChatHistory: (chatId: number) =>
+    ipcRenderer.invoke('compress-chat-history', chatId),
+    
   // AI operations
   sendAIMessage: (params: {
     text: string;
@@ -57,6 +67,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
     modelId?: string;
   }): Promise<string> => 
     ipcRenderer.invoke('send-ai-message', params),
+    
+  sendAIMessageWithTracking: (params: {
+    text: string;
+    imagePath?: string;
+    provider: string;
+    apiKey: string;
+    chatId: number;
+    modelId?: string;
+  }): Promise<{
+    content: string;
+    provider: string;
+    model: string;
+    optimizationUsed: string;
+    actualInputTokens: number;
+    inputCost: number;
+    outputCost: number;
+    totalCost: number;
+  }> => 
+    ipcRenderer.invoke('send-ai-message-with-tracking', params),
 
   // API Key management
   getApiKeysStatus: (): Promise<{
@@ -104,6 +133,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // External link operations
   openExternal: (url: string): Promise<void> => 
     ipcRenderer.invoke('open-external', url),
+
+  // Get app version
+  getAppVersion: (): Promise<string> =>
+    ipcRenderer.invoke('get-app-version'),
 
   // Selection events (for screen capture overlay)
   selectionComplete: (selection: any) => {

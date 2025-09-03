@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, shell } from 'electron';
+import { ipcMain, BrowserWindow, shell, app } from 'electron';
 import { getDatabase } from './database';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -13,7 +13,8 @@ class MainAIService {
     chatHistory?: any[];
     modelId?: string;
   }): Promise<{content: string, provider: string, model: string}> {
-    console.log(`🔀 sendMessage called - Provider: ${provider}, Model: ${params.modelId}, Text: "${params.text.substring(0, 50)}..."`);
+    console.log(`🔀 sendMessage called with provider: ${provider}, text: ${params.text.substring(0, 50)}...`);
+    const imageData = params.image;
     
     switch (provider.toLowerCase()) {
       case 'openai':
@@ -531,7 +532,7 @@ export function setupIpcHandlers(): void {
       let chatHistory: any[] = [];
       if (chatId) {
         const db = getDatabase();
-        chatHistory = db.getChatMessages(chatId);
+        chatHistory = db.getOptimizedChatMessages(chatId);
       }
 
       const response = await aiService.sendMessage(provider, {
@@ -546,6 +547,265 @@ export function setupIpcHandlers(): void {
     } catch (error: any) {
       console.error('AI message failed:', error);
       throw error;
+    }
+  });
+
+  // Enhanced AI message sending with optimization tracking
+  ipcMain.handle('send-ai-message-with-tracking', async (_event: any, params: {
+    text: string;
+    imagePath?: string;
+    provider: string;
+    apiKey: string;
+    chatId?: number;
+    modelId?: string;
+    optimizationMethod?: string;
+  }) => {
+    const { text, imagePath, provider, apiKey, chatId, modelId } = params;
+    
+    console.log(`🔑 send-ai-message-with-tracking called with provider: ${provider}`);
+    
+    try {
+      const db = getDatabase();
+      const settings = db.getSettings();
+      let imageData = '';
+      
+      if (imagePath && fs.existsSync(imagePath)) {
+        const imageBuffer = fs.readFileSync(imagePath);
+        imageData = imageBuffer.toString('base64');
+      }
+
+      let chatHistory: any[] = [];
+      let optimizationUsed = 'full-history';
+      let actualInputTokens = 0;
+      
+      if (chatId) {
+        const messages = db.getChatMessages(chatId);
+        const { 
+          applyRollingWindow, 
+          applySmartSummary, 
+          applyRollingWithSummary,
+          estimateMessageTokens
+        } = require('../shared/token-optimizer');
+        
+        // Get optimization strategy from settings
+        const tokenOptimization = settings.tokenOptimization || {
+          strategy: 'full-history',
+          rollingWindowSize: 15,
+          summaryThreshold: 5000
+        };
+        
+        // Apply optimization based on strategy
+        switch (tokenOptimization.strategy) {
+          case 'rolling-window':
+            const rollingResult = applyRollingWindow(messages, tokenOptimization.rollingWindowSize);
+            chatHistory = rollingResult.messages;
+            optimizationUsed = 'rolling-window';
+            break;
+          case 'smart-summary':
+            const summaryResult = applySmartSummary(messages, tokenOptimization.summaryThreshold);
+            chatHistory = summaryResult.messages;
+            optimizationUsed = 'smart-summary';
+            break;
+          case 'rolling-with-summary':
+            const hybridResult = applyRollingWithSummary(messages, tokenOptimization.rollingWindowSize, tokenOptimization.summaryThreshold);
+            chatHistory = hybridResult.messages;
+            optimizationUsed = 'rolling-with-summary';
+            break;
+          default:
+            chatHistory = messages;
+            optimizationUsed = 'full-history';
+        }
+        
+        // Calculate actual input tokens that will be sent
+        actualInputTokens = chatHistory.reduce((total, msg) => total + estimateMessageTokens(msg), 0);
+        
+        // Add current message tokens
+        actualInputTokens += estimateMessageTokens({ content: text });
+      }
+
+      const aiService = new MainAIService();
+      const response = await aiService.sendMessage(provider, {
+        text,
+        image: imageData,
+        apiKey,
+        chatHistory,
+        modelId
+      });
+
+      // Calculate actual costs
+      const { estimateCost } = require('../shared/token-optimizer');
+      const model = modelId || 'gpt-4o';
+      const inputCost = estimateCost(actualInputTokens, provider, model, 'input');
+      
+      // Estimate output tokens and cost (rough estimate based on response length)
+      const estimatedOutputTokens = Math.ceil(response.content.length / 4);
+      const outputCost = estimateCost(estimatedOutputTokens, provider, model, 'output');
+      
+      return {
+        ...response,
+        optimizationUsed,
+        actualInputTokens,
+        inputCost,
+        outputCost,
+        totalCost: inputCost + outputCost
+      };
+    } catch (error: any) {
+      console.error('Enhanced AI message sending failed:', error);
+      throw error;
+    }
+  });
+
+  // Token optimization operations
+  ipcMain.handle('estimate-chat-tokens', async (_event: any, chatId: number) => {
+    const db = getDatabase();
+    const messages = db.getChatMessages(chatId);
+    
+    try {
+      const { estimateChatTokens, estimateAccurateChatCost } = require('../shared/token-optimizer');
+      const settings = db.getSettings();
+      
+      const totalTokens = estimateChatTokens(messages);
+      const fallbackProvider = settings.selectedProvider || 'openai';
+      const fallbackModel = settings.selectedModels?.[fallbackProvider] || 'gpt-4o';
+      
+      // Use accurate cost calculation that considers each message's actual model
+      const accurateCostBreakdown = estimateAccurateChatCost(messages, fallbackProvider, fallbackModel);
+      
+      return {
+        totalTokens,
+        messageCount: messages.length,
+        estimatedCost: accurateCostBreakdown.totalCost,
+        costBreakdown: {
+          inputCost: accurateCostBreakdown.inputCost,
+          estimatedOutputCost: accurateCostBreakdown.estimatedOutputCost,
+          totalCost: accurateCostBreakdown.totalCost
+        },
+        modelBreakdown: accurateCostBreakdown.breakdown
+      };
+    } catch (error) {
+      console.error('Failed to estimate tokens:', error);
+      return {
+        totalTokens: 0,
+        messageCount: messages.length,
+        estimatedCost: 0,
+        costBreakdown: { inputCost: 0, estimatedOutputCost: 0, totalCost: 0 },
+        modelBreakdown: []
+      };
+    }
+  });
+
+  ipcMain.handle('get-optimization-preview', async (_event: any, chatId: number) => {
+    const db = getDatabase();
+    const messages = db.getChatMessages(chatId);
+    const settings = db.getSettings();
+    
+    try {
+      const { 
+        applyRollingWindow, 
+        applySmartSummary, 
+        applyRollingWithSummary,
+        estimateAccurateChatCost
+      } = require('../shared/token-optimizer');
+      
+      const { strategy, rollingWindowSize, summaryThreshold } = settings.tokenOptimization;
+      const fallbackProvider = settings.selectedProvider || 'openai';
+      const fallbackModel = settings.selectedModels?.[fallbackProvider] || 'gpt-4o';
+      
+      let result;
+      switch (strategy) {
+        case 'rolling-window':
+          result = applyRollingWindow(messages, rollingWindowSize);
+          break;
+        case 'smart-summary':
+          result = applySmartSummary(messages, summaryThreshold);
+          break;
+        case 'rolling-with-summary':
+          result = applyRollingWithSummary(messages, rollingWindowSize, summaryThreshold);
+          break;
+        default:
+          result = { 
+            messages, 
+            originalTokens: messages.reduce((acc, msg) => acc + Math.ceil(msg.content.length / 4), 0), 
+            optimizedTokens: messages.reduce((acc, msg) => acc + Math.ceil(msg.content.length / 4), 0), 
+            savedTokens: 0, 
+            strategy: 'full-history' 
+          };
+      }
+      
+      // Use accurate cost calculations that consider each message's actual model
+      const originalCostBreakdown = estimateAccurateChatCost(messages, fallbackProvider, fallbackModel);
+      const optimizedCostBreakdown = estimateAccurateChatCost(result.messages, fallbackProvider, fallbackModel);
+      
+      return {
+        ...result,
+        originalCost: originalCostBreakdown.totalCost,
+        optimizedCost: optimizedCostBreakdown.totalCost,
+        savedCost: originalCostBreakdown.totalCost - optimizedCostBreakdown.totalCost,
+        costBreakdown: {
+          original: originalCostBreakdown,
+          optimized: optimizedCostBreakdown
+        }
+      };
+    } catch (error) {
+      console.error('Failed to get optimization preview:', error);
+      return {
+        messages,
+        originalTokens: 0,
+        optimizedTokens: 0,
+        savedTokens: 0,
+        strategy: 'error',
+        originalCost: 0,
+        optimizedCost: 0,
+        savedCost: 0,
+        costBreakdown: {
+          original: { inputCost: 0, estimatedOutputCost: 0, totalCost: 0, breakdown: [] },
+          optimized: { inputCost: 0, estimatedOutputCost: 0, totalCost: 0, breakdown: [] }
+        }
+      };
+    }
+  });
+
+  ipcMain.handle('compress-chat-history', async (_event: any, chatId: number) => {
+    const db = getDatabase();
+    const messages = db.getChatMessages(chatId);
+    const settings = db.getSettings();
+    
+    try {
+      const { applySmartSummary } = require('../shared/token-optimizer');
+      const result = applySmartSummary(messages, settings.tokenOptimization.summaryThreshold);
+      
+      if (result.checkpoint) {
+        // Save the summary message to database
+        const summaryMessage = db.saveMessage({
+          chatId: chatId,
+          role: result.checkpoint.role,
+          content: result.checkpoint.content,
+          provider: result.checkpoint.provider,
+          model: result.checkpoint.model
+        });
+        
+        // Delete the old messages that were summarized
+        const messagesToDelete = messages.slice(0, -Math.max(5, Math.floor(messages.length * 0.3)));
+        messagesToDelete.forEach(msg => db.deleteMessage(msg.id));
+        
+        return {
+          success: true,
+          summaryMessage,
+          deletedCount: messagesToDelete.length,
+          savedTokens: result.savedTokens
+        };
+      }
+      
+      return {
+        success: false,
+        reason: 'No compression needed'
+      };
+    } catch (error) {
+      console.error('Failed to compress chat history:', error);
+      return {
+        success: false,
+        reason: 'Compression failed'
+      };
     }
   });
 
@@ -653,37 +913,67 @@ export function setupIpcHandlers(): void {
   });
 
   ipcMain.handle('save-api-key', async (_event: any, { provider, key }: { provider: string, key: string }) => {
-    const envPath = path.join(process.cwd(), '.env');
-    let envContent = '';
-
-    // Read existing .env file
-    if (fs.existsSync(envPath)) {
-      envContent = fs.readFileSync(envPath, 'utf8');
+    try {
+      console.log(`💾 Saving API key for provider: ${provider}`);
+      
+      const db = getDatabase();
+      const currentSettings = db.getSettings();
+      
+      // Create the updated settings object
+      const updatedSettings = { ...currentSettings };
+      
+      switch (provider.toLowerCase()) {
+        case 'openai':
+          updatedSettings.openaiApiKey = key;
+          break;
+        case 'claude':
+          updatedSettings.claudeApiKey = key;
+          break;
+        case 'deepseek':
+          updatedSettings.deepseekApiKey = key;
+          break;
+        default:
+          throw new Error(`Unknown provider: ${provider}`);
+      }
+      
+      // Save to database
+      db.saveSettings(updatedSettings);
+      console.log(`✅ API key saved to database for ${provider}`);
+      
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to save API key for ${provider}:`, error);
+      throw error;
     }
-
-    const envVarName = `${provider.toUpperCase()}_API_KEY`;
-    const regex = new RegExp(`^${envVarName}=.*$`, 'm');
-    
-    if (regex.test(envContent)) {
-      // Replace existing key
-      envContent = envContent.replace(regex, `${envVarName}=${key}`);
-    } else {
-      // Add new key
-      envContent += `\n${envVarName}=${key}`;
-    }
-
-    // Write back to .env file
-    fs.writeFileSync(envPath, envContent);
-    
-    // Update process.env
-    process.env[envVarName] = key;
-
-    return true;
   });
 
   // External link operations
   ipcMain.handle('open-external', async (_event: any, url: string) => {
     await shell.openExternal(url);
+  });
+
+  // Get app version
+  ipcMain.handle('get-app-version', async () => {
+    try {
+      // In development: read from project root
+      // In production: read from app root (same directory as the executable)
+      const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+      
+      let packageJsonPath: string;
+      if (isDev) {
+        // Development: go up from dist/main/main/ to project root
+        packageJsonPath = path.join(__dirname, '..', '..', '..', 'package.json');
+      } else {
+        // Production: package.json should be in the app resources
+        packageJsonPath = path.join(process.resourcesPath, 'package.json');
+      }
+      
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      return packageJson.version || '1.0.2';
+    } catch (error) {
+      console.error('Failed to read package.json:', error);
+      return '1.0.2'; // fallback version
+    }
   });
 
   // Save uploaded image

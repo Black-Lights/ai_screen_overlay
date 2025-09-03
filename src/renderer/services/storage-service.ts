@@ -5,7 +5,22 @@ export class StorageService {
   // All database operations are handled in the main process
 
   async getSettings(): Promise<AppSettings> {
-    return window.electronAPI.getSettings();
+    const settings = await window.electronAPI.getSettings() as any;
+    
+    // Ensure tokenOptimization is present with defaults
+    const completeSettings: AppSettings = {
+      ...settings,
+      tokenOptimization: settings.tokenOptimization || {
+        strategy: 'rolling-with-summary',
+        rollingWindowSize: 15,
+        summaryThreshold: 5000,
+        showTokenCounter: true,
+        showCostEstimator: false,
+        autoSuggestOptimization: true
+      }
+    };
+    
+    return completeSettings;
   }
 
   async saveSettings(settings: Partial<AppSettings>): Promise<void> {

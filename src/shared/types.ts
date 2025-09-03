@@ -7,6 +7,9 @@ export interface Message {
   provider?: string;
   model?: string;
   timestamp: string;
+  optimizationMethod?: string; // Track which optimization was used when sending
+  actualInputTokens?: number; // Actual tokens sent to API
+  actualCost?: number; // Actual cost of this message
 }
 
 export interface Chat {
@@ -14,6 +17,8 @@ export interface Chat {
   title: string;
   createdAt: string;
   updatedAt: string;
+  totalCost?: number; // Total cost spent on this chat
+  messageCount?: number; // Total messages in chat
 }
 
 export interface AIProvider {
@@ -52,6 +57,15 @@ export interface AppSettings {
   overlaySize: {
     width: number;
     height: number;
+  };
+  // Token optimization settings
+  tokenOptimization: {
+    strategy: 'full-history' | 'rolling-window' | 'smart-summary' | 'rolling-with-summary';
+    rollingWindowSize: number; // Number of messages to keep
+    summaryThreshold: number; // Token count threshold for summarization
+    showTokenCounter: boolean;
+    showCostEstimator: boolean;
+    autoSuggestOptimization: boolean;
   };
 }
 

@@ -13,7 +13,15 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({
     selectedProvider: 'openai',
     overlayPosition: { x: 100, y: 100 },
-    overlaySize: { width: 400, height: 600 }
+    overlaySize: { width: 400, height: 600 },
+    tokenOptimization: {
+      strategy: 'rolling-with-summary',
+      rollingWindowSize: 15,
+      summaryThreshold: 5000,
+      showTokenCounter: true,
+      showCostEstimator: false,
+      autoSuggestOptimization: true
+    }
   });
   const [isLoading, setIsLoading] = useState(true);
   const [showMoveToNewChatOption, setShowMoveToNewChatOption] = useState(false);
@@ -55,9 +63,24 @@ const App: React.FC = () => {
       
       console.log('⚙️ Loading settings...');
       // Load settings
-      const savedSettings = await window.electronAPI.getSettings();
+      const savedSettings = await window.electronAPI.getSettings() as any;
       console.log('✅ Settings loaded:', savedSettings);
-      setSettings(savedSettings);
+      
+      // Ensure tokenOptimization settings are present with defaults
+      const settingsWithDefaults: AppSettings = {
+        ...savedSettings,
+        tokenOptimization: {
+          strategy: 'rolling-with-summary',
+          rollingWindowSize: 15,
+          summaryThreshold: 5000,
+          showTokenCounter: true,
+          showCostEstimator: false,
+          autoSuggestOptimization: true,
+          ...(savedSettings.tokenOptimization || {})
+        }
+      };
+      
+      setSettings(settingsWithDefaults);
       
       console.log('💬 Loading chats...');
       // Load chats
@@ -251,14 +274,18 @@ const App: React.FC = () => {
   };
 
   const switchChat = async (chat: Chat) => {
-    setCurrentChat(chat);
+    // Get the latest chat data from database to ensure we have current totalCost
+    const latestChats = await window.electronAPI.getChats();
+    const latestChat = latestChats.find(c => c.id === chat.id) || chat;
+    
+    setCurrentChat(latestChat);
     const chatMessages = await window.electronAPI.getChatMessages(chat.id);
     setMessages(chatMessages);
     
     // Clear move to new chat option when switching chats
     setShowMoveToNewChatOption(false);
     
-    console.log('✅ Switched to chat:', chat.title);
+    console.log('✅ Switched to chat:', latestChat.title, 'Total cost:', (latestChat as Chat).totalCost || 0);
   };
 
   const deleteChat = async (chatId: number) => {
@@ -315,9 +342,9 @@ const App: React.FC = () => {
         throw new Error(`API key not configured for ${settings.selectedProvider}`);
       }
 
-      // Send to AI
+      // Send to AI with optimization tracking
       const selectedModel = settings.selectedModels?.[settings.selectedProvider];
-      const aiResponse = await window.electronAPI.sendAIMessage({
+      const aiResponse = await window.electronAPI.sendAIMessageWithTracking({
         text,
         imagePath,
         provider: settings.selectedProvider,
@@ -326,17 +353,38 @@ const App: React.FC = () => {
         modelId: selectedModel
       });
 
-      // Save AI response with provider and model info
+      // Save AI response with actual cost tracking
       const aiMessage = await window.electronAPI.saveMessage({
         chatId: currentChat.id,
         role: 'assistant',
-        content: aiResponse.content, // Extract content from structured response
+        content: aiResponse.content,
         provider: settings.selectedProvider,
-        model: aiResponse.model // Extract model from structured response
+        model: aiResponse.model,
+        optimizationMethod: aiResponse.optimizationUsed,
+        actualInputTokens: aiResponse.actualInputTokens,
+        actualCost: aiResponse.totalCost
       });
 
       const updatedMessages = [...messages, userMessage, aiMessage];
       setMessages(updatedMessages);
+      
+      // Update currentChat with new totalCost
+      if (currentChat) {
+        const updatedChat = {
+          ...currentChat,
+          totalCost: (currentChat.totalCost || 0) + aiResponse.totalCost
+        };
+        setCurrentChat(updatedChat);
+        
+        // Also update the chat in the chats array
+        setChats(prevChats => 
+          prevChats.map(chat => 
+            chat.id === currentChat.id 
+              ? { ...chat, totalCost: (chat.totalCost || 0) + aiResponse.totalCost }
+              : chat
+          )
+        );
+      }
       
       // Check if we should auto-generate a title for this chat
       if (shouldAutoName(currentChat, updatedMessages)) {
