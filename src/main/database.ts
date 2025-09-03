@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { Chat, Message, AppSettings } from '@/shared/types';
 
 class DatabaseService {
@@ -301,9 +302,34 @@ class DatabaseService {
 
   syncEnvToDatabase(): void {
     console.log('🔄 Syncing .env keys to database...');
-    const envPath = path.join(process.cwd(), '.env');
     
-    if (!fs.existsSync(envPath)) {
+    // Get the appropriate .env file path for different installation types
+    const getEnvPath = (): string | null => {
+      const possiblePaths = [
+        // 1. Current working directory (portable versions)
+        path.join(process.cwd(), '.env'),
+        // 2. User config directory (installed versions)
+        path.join(os.homedir(), '.config', 'ai-screen-overlay', '.env'),
+        // 3. Windows AppData (installed versions on Windows)
+        process.platform === 'win32' ? path.join(os.homedir(), 'AppData', 'Roaming', 'ai-screen-overlay', '.env') : null,
+        // 4. macOS Application Support (installed versions on macOS)
+        process.platform === 'darwin' ? path.join(os.homedir(), 'Library', 'Application Support', 'ai-screen-overlay', '.env') : null,
+      ].filter(Boolean) as string[];
+
+      // Return the first existing path
+      for (const envPath of possiblePaths) {
+        if (fs.existsSync(envPath)) {
+          console.log(`📄 Found .env file for sync at: ${envPath}`);
+          return envPath;
+        }
+      }
+
+      console.log(`⚠️ .env file not found for sync in any of these locations:\n${possiblePaths.map(p => `  - ${p}`).join('\n')}`);
+      return null;
+    };
+
+    const envPath = getEnvPath();
+    if (!envPath) {
       console.log('⚠️ .env file not found, skipping sync');
       return;
     }

@@ -9,6 +9,20 @@ import { Chat, Message } from '@/shared/types';
 import { AVAILABLE_MODELS } from '@/shared/models';
 import { ImageCanvas } from './ImageCanvas';
 
+// Helper function to extract text content from React children
+const extractTextFromChildren = (children: any): string => {
+  if (typeof children === 'string') {
+    return children;
+  }
+  if (Array.isArray(children)) {
+    return children.map(extractTextFromChildren).join('');
+  }
+  if (children && typeof children === 'object' && children.props) {
+    return extractTextFromChildren(children.props.children);
+  }
+  return '';
+};
+
 interface ChatInterfaceProps {
   currentChat: Chat | null;
   messages: Message[];
@@ -264,7 +278,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
               
-              if (!inline && match) {
+              if (!inline) {
                 const codeContent = String(children).replace(/\n$/, '');
                 const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
                 
@@ -274,35 +288,64 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   setTimeout(() => setCopiedCodeId(null), 2000);
                 };
                 
-                return (
-                  <div className="relative group">
-                    <button
-                      onClick={handleCopyCode}
-                      className={`absolute top-2 right-2 p-1.5 rounded transition-all duration-200 z-30 ${
-                        copiedCodeId === codeId 
-                          ? 'opacity-100 bg-green-500/95 text-white shadow-lg' 
-                          : 'opacity-0 group-hover:opacity-100 bg-white/15 hover:bg-white/25'
-                      }`}
-                      title="Copy code"
-                    >
-                      {copiedCodeId === codeId ? (
-                        <span className="text-xs text-white font-semibold whitespace-nowrap px-2 py-1">Copied!</span>
-                      ) : (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </button>
-                    <SyntaxHighlighter
-                      style={oneDark as any}
-                      language={match[1]}
-                      PreTag="div"
-                      {...props}
-                    >
-                      {codeContent}
-                    </SyntaxHighlighter>
-                  </div>
-                );
+                if (match) {
+                  // Code block with language - use syntax highlighter
+                  return (
+                    <div className="relative group">
+                      <button
+                        onClick={handleCopyCode}
+                        className={`absolute top-2 right-2 p-1.5 rounded transition-all duration-200 z-30 ${
+                          copiedCodeId === codeId 
+                            ? 'opacity-100 bg-green-500/95 text-white shadow-lg' 
+                            : 'opacity-0 group-hover:opacity-100 bg-white/15 hover:bg-white/25'
+                        }`}
+                        title="Copy code"
+                      >
+                        {copiedCodeId === codeId ? (
+                          <span className="text-xs text-white font-semibold whitespace-nowrap px-2 py-1">Copied!</span>
+                        ) : (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                      <SyntaxHighlighter
+                        style={oneDark as any}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {codeContent}
+                      </SyntaxHighlighter>
+                    </div>
+                  );
+                } else {
+                  // Code block without language (command blocks) - use plain pre
+                  return (
+                    <div className="relative group">
+                      <button
+                        onClick={handleCopyCode}
+                        className={`absolute top-2 right-2 p-1.5 rounded transition-all duration-200 z-30 ${
+                          copiedCodeId === codeId 
+                            ? 'opacity-100 bg-green-500/95 text-white shadow-lg' 
+                            : 'opacity-0 group-hover:opacity-100 bg-white/15 hover:bg-white/25'
+                        }`}
+                        title="Copy command"
+                      >
+                        {copiedCodeId === codeId ? (
+                          <span className="text-xs text-white font-semibold whitespace-nowrap px-2 py-1">Copied!</span>
+                        ) : (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                      <pre className="bg-black/50 p-3 rounded overflow-x-auto text-sm font-mono whitespace-pre-wrap" {...props}>
+                        <code>{children}</code>
+                      </pre>
+                    </div>
+                  );
+                }
               }
               
               return (
@@ -323,6 +366,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 {children}
               </blockquote>
             ),
+            pre: ({ children, ...props }: any) => {
+              // Handle pre blocks that aren't wrapped by code component (command blocks)
+              const textContent = extractTextFromChildren(children);
+              const preId = `pre-${Math.random().toString(36).substr(2, 9)}`;
+              
+              const handleCopyPre = async () => {
+                await navigator.clipboard.writeText(textContent);
+                setCopiedCodeId(preId);
+                setTimeout(() => setCopiedCodeId(null), 2000);
+              };
+              
+              return (
+                <div className="relative group">
+                  <button
+                    onClick={handleCopyPre}
+                    className={`absolute top-2 right-2 p-1.5 rounded transition-all duration-200 z-30 ${
+                      copiedCodeId === preId 
+                        ? 'opacity-100 bg-green-500/95 text-white shadow-lg' 
+                        : 'opacity-0 group-hover:opacity-100 bg-white/15 hover:bg-white/25'
+                    }`}
+                    title="Copy command"
+                  >
+                    {copiedCodeId === preId ? (
+                      <span className="text-xs text-white font-semibold whitespace-nowrap px-2 py-1">Copied!</span>
+                    ) : (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                  <pre className="bg-black/50 p-3 rounded overflow-x-auto text-sm font-mono" {...props}>
+                    {children}
+                  </pre>
+                </div>
+              );
+            },
           }}
         >
           {processedContent}
@@ -509,24 +588,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Move to New Chat Option */}
+            {/* Move to New Chat Option */}
       {showMoveToNewChatOption && (
         <div className="px-4 py-3 border-t border-b border-white/10 bg-yellow-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <span className="text-sm text-yellow-200">
                 Screenshot added to current chat
               </span>
             </div>
-            <button
-              onClick={onMoveToNewChat}
-              className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
-            >
-              Move to New Chat
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={onMoveToNewChat}
+                className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+              >
+                Move to New Chat
+              </button>
+              <button
+                onClick={() => onImageRemoved?.()}
+                className="p-1 text-yellow-300 hover:text-white transition-colors"
+                title="Close"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -604,6 +694,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             type="submit"
             disabled={(!inputText.trim() && !currentImage) || isLoading || !currentChat}
             className="glass-button disabled:opacity-50 disabled:cursor-not-allowed self-end"
+            title={currentImage && !inputText.trim() ? "Send screenshot" : "Send message"}
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
@@ -621,7 +712,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         />
 
         <div className="mt-2 text-xs text-white/50 text-center">
-          Press Shift+Enter for new line • Enter to send • Ctrl+V to paste images
+          Press Shift+Enter for new line • Enter to send • Ctrl+V to paste images • Images can be sent without text
         </div>
       </div>
 

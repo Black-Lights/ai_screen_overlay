@@ -39,8 +39,15 @@ nano ~/.config/ai-screen-overlay/.env
 ```
 
 **Windows:**
-```
-%APPDATA%\ai-screen-overlay\.env
+1. **Open File Explorer** and navigate to: `%APPDATA%\ai-screen-overlay\`
+   - Or paste this in the address bar: `C:\Users\YourUsername\AppData\Roaming\ai-screen-overlay\`
+2. **Create the folder** if it doesn't exist
+3. **Create a new file** named `.env` (no file extension)
+4. **Edit the file** with Notepad and add your API keys:
+```env
+OPENAI_API_KEY=sk-your-actual-openai-key-here
+CLAUDE_API_KEY=sk-ant-your-actual-claude-key-here  
+DEEPSEEK_API_KEY=your-actual-deepseek-key-here
 ```
 
 **macOS:**

@@ -291,17 +291,18 @@ const App: React.FC = () => {
   };
 
   const sendMessage = async (text: string, imagePath?: string) => {
-    if (!currentChat || !text.trim()) return;
+    if (!currentChat || (!text.trim() && !imagePath)) return;
 
     try {
       // Hide move to new chat option when user sends a message
       setShowMoveToNewChatOption(false);
       
       // Create a new message as usual
+      const messageContent = text.trim() || (imagePath ? "[Image]" : "");
       const userMessage = await window.electronAPI.saveMessage({
         chatId: currentChat.id,
         role: 'user',
-        content: text,
+        content: messageContent,
         imagePath
       });
       

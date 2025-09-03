@@ -76,8 +76,8 @@ class Application {
       maxHeight: 1400,
       maxWidth: 1000,
       show: false,
-      frame: true, // Keep frame for smooth dragging
-      titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden', // Hide title bar content but keep frame
+      frame: true, // Keep frame for proper window controls
+      titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default', // Show title bar on Windows/Linux
       backgroundColor: '#1f1f1f',
       alwaysOnTop: false, // Start with alwaysOnTop false, we'll set it when needed
       skipTaskbar: false,

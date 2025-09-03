@@ -115,10 +115,11 @@ class MainAIService {
       }
       
       // Add current message
+      const messageText = params.text.trim() || "What do you see in this image?";
       messages.push({
         role: 'user',
         content: params.image ? [
-          { type: 'text', text: params.text },
+          { type: 'text', text: messageText },
           {
             type: 'image_url',
             image_url: {
@@ -126,7 +127,7 @@ class MainAIService {
               detail: 'high'
             }
           }
-        ] : params.text
+        ] : messageText
       });
 
       // Determine if we're using an o1 model (which uses different parameters)
@@ -204,7 +205,8 @@ class MainAIService {
       }
       
       // Add current message
-      const content: any[] = [{ type: 'text', text: params.text }];
+      const messageText = params.text.trim() || "What do you see in this image?";
+      const content: any[] = [{ type: 'text', text: messageText }];
       if (params.image) {
         content.unshift({
           type: 'image',
@@ -274,16 +276,17 @@ class MainAIService {
       }
       
       // Add current message - DeepSeek uses different format for vision
+      const messageText = params.text.trim() || "What do you see in this image?";
       if (params.image) {
         // For now, disable image support for DeepSeek to avoid format errors
         messages.push({
           role: 'user',
-          content: params.text + " [Note: Image was provided but DeepSeek vision API format needs verification]"
+          content: messageText + " [Note: Image was provided but DeepSeek vision API format needs verification]"
         });
       } else {
         messages.push({
           role: 'user',
-          content: params.text
+          content: messageText
         });
       }
 
