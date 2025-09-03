@@ -5,7 +5,7 @@
 ### ✅ Option 1: DEB Package (Recommended)
 ```bash
 # Download from GitHub releases or use local file
-sudo dpkg -i "AI-Screen-Overlay-1.0.1-amd64.deb"
+sudo dpkg -i "AI-Screen-Overlay-1.1.0-amd64.deb"
 
 # If dependencies are missing:
 sudo apt-get install -f
@@ -17,16 +17,16 @@ ai-screen-overlay
 ### ✅ Option 2: AppImage (Portable)
 ```bash
 # Make executable and run
-chmod +x "AI-Screen-Overlay-1.0.1-x86_64.AppImage"
+chmod +x "AI-Screen-Overlay-1.1.0-x86_64.AppImage"
 
 # Run with sandbox fix:
-./"AI-Screen-Overlay-1.0.1-x86_64.AppImage" --no-sandbox
+./"AI-Screen-Overlay-1.1.0-x86_64.AppImage" --no-sandbox
 ```
 
 ### ✅ Option 3: Snap (Sandboxed)
 ```bash
 # Install the snap
-sudo snap install "AI-Screen-Overlay-1.0.1-amd64.snap" --dangerous
+sudo snap install "AI-Screen-Overlay-1.1.0-amd64.snap" --dangerous
 
 # Connect network permissions (if needed):
 sudo snap connect ai-screen-overlay:network
@@ -36,8 +36,8 @@ sudo snap connect ai-screen-overlay:network-bind
 ### ✅ Option 4: TAR.GZ (Manual)
 ```bash
 # Extract and run
-tar -xzf "AI-Screen-Overlay-1.0.1-x64.tar.gz"
-cd "AI-Screen-Overlay-1.0.1"
+tar -xzf "AI-Screen-Overlay-1.1.0-x64.tar.gz"
+cd "AI-Screen-Overlay-1.1.0"
 ./ai-screen-overlay
 ```
 
@@ -46,7 +46,7 @@ cd "AI-Screen-Overlay-1.0.1"
 ### AppImage Sandbox Error
 If you see "SUID sandbox helper binary" error:
 ```bash
-./"AI-Screen-Overlay-1.0.1-x86_64.AppImage" --no-sandbox
+./"AI-Screen-Overlay-1.1.0-x86_64.AppImage" --no-sandbox
 ```
 
 ### Snap Network Issues

@@ -4,6 +4,9 @@ import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Version constant - update this when releasing new versions
+const APP_VERSION = '1.1.0';
+
 // AI Service implementation for main process
 class MainAIService {
   async sendMessage(provider: string, params: {
@@ -954,25 +957,39 @@ export function setupIpcHandlers(): void {
 
   // Get app version
   ipcMain.handle('get-app-version', async () => {
+    // In development: read from project root
+    // In production: read from app root (same directory as the executable)
+    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+    
     try {
-      // In development: read from project root
-      // In production: read from app root (same directory as the executable)
-      const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-      
       let packageJsonPath: string;
       if (isDev) {
         // Development: go up from dist/main/main/ to project root
         packageJsonPath = path.join(__dirname, '..', '..', '..', 'package.json');
       } else {
-        // Production: package.json should be in the app resources
-        packageJsonPath = path.join(process.resourcesPath, 'package.json');
+        // Production: try multiple locations
+        const possiblePaths = [
+          path.join(process.resourcesPath, 'package.json'),
+          path.join(process.resourcesPath, 'app', 'package.json'),
+          path.join(__dirname, '..', '..', '..', 'package.json'),
+          path.join(app.getAppPath(), 'package.json')
+        ];
+        
+        packageJsonPath = possiblePaths.find(p => {
+          try {
+            return fs.existsSync(p);
+          } catch {
+            return false;
+          }
+        }) || possiblePaths[0];
       }
       
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      return packageJson.version || '1.0.2';
+      return packageJson.version || APP_VERSION;
     } catch (error) {
       console.error('Failed to read package.json:', error);
-      return '1.0.2'; // fallback version
+      console.log('Tried paths:', isDev ? 'development mode' : 'production paths');
+      return APP_VERSION; // use hardcoded version constant
     }
   });
 
